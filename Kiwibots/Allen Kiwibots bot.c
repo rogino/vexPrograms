@@ -12,8 +12,8 @@ task main()
 	while(true){
 		motor[LBack] = vexRT[Ch3];
 		motor[LFront] = vexRT[Ch3];
-		motor[RFront] = vexRT[Ch1];
-		motor[RBack] = vexRT[Ch1];
+		motor[RFront] = -vexRT[Ch2];
+		motor[RBack] = -vexRT[Ch2];
 		if (vexRT[Btn5U])
 		{
 			motor[Arm] = -armSpeed;
