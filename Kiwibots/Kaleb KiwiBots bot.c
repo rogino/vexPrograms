@@ -62,10 +62,10 @@ task main() {
     if (!wasPressed) {
       //Default value. Arcade
       //uses right joystick
-      setDriveSpeed(vexRT[Ch1] + vexRT[Ch3], vexRT[Ch1] - vexRT[Ch3]);
+      setDriveSpeed(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]);
     } else {
       //Tank Drive
-      setDriveSpeed(vexRT[Ch3], -vexRT[Ch2]);
+      setDriveSpeed(vexRT[Ch3], vexRT[Ch2]);
     }
   }
 }
