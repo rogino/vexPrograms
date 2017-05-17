@@ -1,7 +1,8 @@
 #pragma config(Sensor, dgtl1,  armLimiter,     sensorTouch)
 #pragma config(Sensor, dgtl2,  btnL,           sensorTouch)
+#pragma config(Sensor, dgtl8,  ultrasound,     sensorSONAR_cm)
+#pragma config(Sensor, dgtl10, lr,             sensorTouch)
 #pragma config(Sensor, dgtl11, btnR,           sensorTouch)
-#pragma config(Sensor, dgtl12, btnM,           sensorTouch)
 #pragma config(Motor,  port1,           BL,            tmotorVex393_HBridge, openLoop)
 #pragma config(Motor,  port2,           BR,            tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port8,           Arm,           tmotorVex393_MC29, openLoop)
@@ -45,13 +46,35 @@ void pre_auton() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-task autonomous() {
-	//SensorValue[btnL]
-	// .....................................................................................
-	// Insert user code here.
-	// .....................................................................................
+/*Read ability*/
 
-	AutonomousCodePlaceholderForTesting(); // Remove this function call once you have "real" code.
+void setDriveSpeed(int l, int r);
+void Startup(){
+	int wallLimit = 10;
+	bool leftChir = !!SensorValue[lr];
+	while (SensorValue[ultrasound] > wallLimit && SensorValue[ultrasound] != -1)
+	{
+		setDriveSpeed(40,40);
+	}
+	if (leftChir)
+	{
+		setDriveSpeed(50, -50);
+	}
+	else
+	{
+		setDriveSpeed(-50, 50);
+	}
+	wait1Msec(800);
+	while (!SensorValue[btnL] && !SensorValue[btnR] && SensorValue[ultrasound] > 5){
+		setDriveSpeed(40, 40);
+	}
+	setDriveSpeed(127, 127);
+	wait1Msec(2000);
+	setDriveSpeed(0, 0);
+}
+
+task autonomous() {
+		Startup();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -68,12 +91,7 @@ bool isPressed = false;
 int armSpeed = 80;
 
 int absInt(int a) {
-	if (a > 0) {
-		return a;
-	}
-	else {
-		return -a;
-	}
+	return (a > 0)?a:-a;
 }
 
 void setDriveSpeed(int l, int r) {
@@ -105,8 +123,11 @@ void setDriveSpeed(int l, int r) {
 
 }*/
 task usercontrol() {
+	Startup();
+
+
 	// User control code here, inside the loop
-	while (true) {
+	/*while (true) {
 		wait1Msec(1); //Wait 1 millisecond. For button or something.
 		//Arm
 		if (vexRT[Btn5U]) {
@@ -165,5 +186,5 @@ task usercontrol() {
 			//Tank Drive
 			setDriveSpeed(vexRT[Ch3], vexRT[Ch2]);
 		}
-	}
+	}*/
 }
