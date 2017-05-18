@@ -123,11 +123,11 @@ void setDriveSpeed(int l, int r) {
 
 }*/
 task usercontrol() {
-	Startup();
+	//Startup();
 
 
 	// User control code here, inside the loop
-	/*while (true) {
+	while (true) {
 		wait1Msec(1); //Wait 1 millisecond. For button or something.
 		//Arm
 		if (vexRT[Btn5U]) {
@@ -140,9 +140,9 @@ task usercontrol() {
 		else {
 			motor[Arm] = 0;
 		}
-
+		/*
 		//If you trgger sensor/hit ball:
-		if (SensorValue[btnM] || (SensorValue[btnM] && SensorValue[btnR]&& SensorValue[btnL])) {
+		if (SensorValue[btnR]&& SensorValue[btnL])) {
 			setDriveSpeed(-60, -60); //Drive backwards
 			wait1Msec(200);
 			setDriveSpeed(0,0);
@@ -161,6 +161,8 @@ task usercontrol() {
 			wait1Msec(50);
 
 		}
+		*/
+
 		//Switching modes
 		if (vexRT[Btn8D] && !isPressed) {
 			//If switching button is pressed and is the first time it has been pressed
@@ -186,5 +188,5 @@ task usercontrol() {
 			//Tank Drive
 			setDriveSpeed(vexRT[Ch3], vexRT[Ch2]);
 		}
-	}*/
+	}
 }
