@@ -50,7 +50,7 @@ void pre_auton() {
 
 void setDriveSpeed(int l, int r);
 void Startup(){
-	int wallLimit = 10;
+	int wallLimit = 50;
 	bool leftChir = !!SensorValue[lr];
 	int driveSpeed = 50;
 	while (SensorValue[ultrasound] > wallLimit && SensorValue[ultrasound] != -1)
@@ -96,6 +96,8 @@ bool wasPressed = false;
 bool isPressed = false;
 int armSpeed = 80;
 
+int debug = 0;
+
 int absInt(int a) {
 	return (a > 0)?a:-a;
 }
@@ -126,7 +128,6 @@ void setDriveSpeed(int l, int r) {
 	setDriveSpeed(127,127);
 	wait1Msec(1000);
 	setDriveSpeed(0,0);
-
 }*/
 task usercontrol() {
 	//Startup();
@@ -134,6 +135,7 @@ task usercontrol() {
 
 	// User control code here, inside the loop
 	while (true) {
+		debug = SensorValue(ultrasound);
 		wait1Msec(1); //Wait 1 millisecond. For button or something.
 		//Arm
 		if (vexRT[Btn5U]) {
@@ -165,7 +167,6 @@ task usercontrol() {
 			wait1Msec(200);
 			setDriveSpeed(0,0);
 			wait1Msec(50);
-
 		}
 		*/
 		if (vexRT[Btn7D]) {
