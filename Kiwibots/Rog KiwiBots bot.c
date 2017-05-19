@@ -52,21 +52,27 @@ void setDriveSpeed(int l, int r);
 void Startup(){
 	int wallLimit = 10;
 	bool leftChir = !!SensorValue[lr];
+	int driveSpeed = 50;
 	while (SensorValue[ultrasound] > wallLimit && SensorValue[ultrasound] != -1)
 	{
-		setDriveSpeed(40,40);
+		setDriveSpeed(driveSpeed,driveSpeed);
 	}
+	setDriveSpeed(0,0);
+	wait1Msec(100); //Wait 0.1sec so better for motor
 	if (leftChir)
 	{
-		setDriveSpeed(50, -50);
+		setDriveSpeed(driveSpeed, -driveSpeed);
 	}
 	else
 	{
-		setDriveSpeed(-50, 50);
+		setDriveSpeed(-driveSpeed, driveSpeed);
 	}
 	wait1Msec(800);
-	while (!SensorValue[btnL] && !SensorValue[btnR] && SensorValue[ultrasound] > 5){
-		setDriveSpeed(40, 40);
+	setDriveSpeed(0,0);
+	wait1Msec(100); //Wait 0.1sec so better for motor
+
+	while (!SensorValue[btnL] && !SensorValue[btnR] && SensorValue[ultrasound] > 5 && SensorValue[ultrasound] != 1){
+		setDriveSpeed(driveSpeed, driveSpeed );
 	}
 	setDriveSpeed(127, 127);
 	wait1Msec(2000);
@@ -162,6 +168,12 @@ task usercontrol() {
 
 		}
 		*/
+		if (vexRT[Btn7D]) {
+			Startup();
+		}
+		//Delete: automonous
+
+
 
 		//Switching modes
 		if (vexRT[Btn8D] && !isPressed) {
@@ -169,7 +181,7 @@ task usercontrol() {
 			isPressed = true;		  //Set isPressed to true
 			wasPressed = !wasPressed; //Switch the mode
 		}
-		else if (!vexRT[Btn6U]) {
+		else if (!vexRT[Btn8U]) {
 			isPressed = false;
 		}
 
