@@ -49,8 +49,40 @@ void pre_auton() {
 /*Read ability*/
 
 void setDriveSpeed(int l, int r);
+
+void Startup() {
+	bool leftChir = !!SensorValue[lr];
+	int driveSpeed = 50;
+	setDriveSpeed(driveSpeed, driveSpeed);
+	wait1Msec(1200);
+
+	setDriveSpeed(0,0);
+	wait1Msec(100); //Wait 0.1sec so better for motor
+	if (leftChir)
+	{
+		setDriveSpeed(driveSpeed, -driveSpeed);
+	}
+	else
+	{
+		setDriveSpeed(-driveSpeed, driveSpeed);
+	}
+	wait1Msec(900);//turn for x milliseconds
+	setDriveSpeed(0,0);
+
+	wait1Msec(100);
+
+	setDriveSpeed(driveSpeed, driveSpeed);
+	wait1Msec(800);
+
+	setDriveSpeed(127, 127);
+	wait1Msec(1000);
+	setDriveSpeed(0,0);
+}
+
+
+/*
 void Startup(){
-	int wallLimit = 10;
+	int wallLimit = 15;
 	bool leftChir = !!SensorValue[lr];
 	int driveSpeed = 50;
 	while (SensorValue[ultrasound] > wallLimit && SensorValue[ultrasound] != -1)
@@ -67,7 +99,7 @@ void Startup(){
 	{
 		setDriveSpeed(-driveSpeed, driveSpeed);
 	}
-	wait1Msec(800);
+	wait1Msec(800);//turn for 2 seconds
 	setDriveSpeed(0,0);
 	wait1Msec(100); //Wait 0.1sec so better for motor
 
@@ -78,6 +110,7 @@ void Startup(){
 	wait1Msec(2000);
 	setDriveSpeed(0, 0);
 }
+*/
 
 task autonomous() {
 		Startup();
@@ -92,7 +125,7 @@ task autonomous() {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool wasPressed = false;
+bool wasPressed = true;
 bool isPressed = false;
 int armSpeed = 80;
 
