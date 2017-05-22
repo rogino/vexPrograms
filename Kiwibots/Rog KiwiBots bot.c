@@ -82,11 +82,9 @@ void Startup() {
 
 /*
 void Startup(){
-<<<<<<< HEAD
+
 	int wallLimit = 15;
-=======
-	int wallLimit = 50;
->>>>>>> 75367e07f5c3b6aa7e0d4469f40d729c499dd646
+
 	bool leftChir = !!SensorValue[lr];
 	int driveSpeed = 50;
 	while (SensorValue[ultrasound] > wallLimit && SensorValue[ultrasound] != -1)
@@ -133,7 +131,6 @@ bool wasPressed = true;
 bool isPressed = false;
 int armSpeed = 80;
 
-int debug = 0;
 
 int absInt(int a) {
 	return (a > 0)?a:-a;
@@ -172,7 +169,6 @@ task usercontrol() {
 
 	// User control code here, inside the loop
 	while (true) {
-		debug = SensorValue(ultrasound);
 		wait1Msec(1); //Wait 1 millisecond. For button or something.
 		//Arm
 		if (vexRT[Btn5U]) {
