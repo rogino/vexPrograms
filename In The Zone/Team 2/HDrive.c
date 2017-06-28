@@ -9,9 +9,11 @@ task main()
 {
 	while(true)
 	{
-		motor[BL]=motor[FL]=vexRT[Ch2]+vexRT[Ch1];
-		motor[BR]=motor[FR]=vexRT[Ch2]-vexRT[Ch1];
-		motor[center]=vexRT[Ch4];
+		motor[BL]=vexRT[Ch2]+vexRT[Ch1];
+		motor[FL]=vexRT[Ch2]+vexRT[Ch1];
+		motor[BR]=vexRT[Ch2]-vexRT[Ch1];
+		motor[FR]=vexRT[Ch2]-vexRT[Ch1];
+		motor[center]=vexRT[Ch3];
 
 	}
 
