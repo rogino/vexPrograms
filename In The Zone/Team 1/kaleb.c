@@ -29,8 +29,6 @@ int correctJoystick(int min, int val) {
 	else {
 		return val;
 	}
-//Discord name for nfagie
-//I STOLE YOUR SQUID FOR LOLZ
 
 }
 
@@ -41,7 +39,7 @@ void setMotorSpeed(int l, int r) {
 
 task main() {
 	while(true) {
-		setMotorSpeed(correctJoystick(minDriveSpeed, vexRT[Ch3]), correctJoystick(minDriveSpeed, vexRT[Ch2]);
+		setMotorSpeed(vexRT[Ch3], vexRT[Ch2]);
 		/*
 		motor[BL] = vexRT[Ch3];
 		motor[FL] = vexRT[Ch3];
@@ -50,49 +48,49 @@ task main() {
 		motor[FR] = vexRT[Ch2];
 		*/
 
-    //Lift mobile goal
-    if (vexRT[Btn8D]) {
-        motor[liftL] = motor[liftR] = -mobileGoalSpeed;
-    }
-    else if (vexRT[Btn8U]) {
-        motor[liftL] = motor[liftR] = mobileGoalSpeed;
-    }
-    else {
-        motor[liftL] = motor[liftR] = 0;
-    }
+		//Lift mobile goal
+		if (vexRT[Btn8D]) {
+			motor[liftL] = motor[liftR] = -mobileGoalSpeed;
+		}
+		else if (vexRT[Btn8U]) {
+			motor[liftL] = motor[liftR] = mobileGoalSpeed;
+		}
+		else {
+			motor[liftL] = motor[liftR] = 0;
+		}
 
-    //Rotate Arm
-    if (vexRT[Btn7D]) {
-        motor[rotateArm] = -rotateSpeed;
-    }
-    else if (vexRT[Btn7U]) {
-        motor[rotateArm] = rotateSpeed;
-    }
-    else {
-        motor[rotateArm] = 0;
-    }
+		//Rotate Arm
+		if (vexRT[Btn7D]) {
+			motor[rotateArm] = -rotateSpeed;
+		}
+		else if (vexRT[Btn7U]) {
+			motor[rotateArm] = rotateSpeed;
+		}
+		else {
+			motor[rotateArm] = 0;
+		}
 
-    //Arm
-    if (vexRT[Btn6D]) {
-        motor[armL] = motor[armR] = -armSpeed;
-    }
-    else if (vexRT[Btn6U]) {
-        motor[armL] = motor[armR] = armSpeed;
-    }
-    else {
-        motor[armL] = motor[armR] = 0;
-    }
+		//Arm
+		if (vexRT[Btn6D]) {
+			motor[armL] = motor[armR] = -armSpeed;
+		}
+		else if (vexRT[Btn6U]) {
+			motor[armL] = motor[armR] = armSpeed;
+		}
+		else {
+			motor[armL] = motor[armR] = 0;
+		}
 
 
-    //Claw
-    if (vexRT[Btn5U]) {
-    	motor[claw] = -clawSpeed;
-    }
-    else if (vexRT[Btn5D]) {
-    	motor[claw] = clawSpeed;
-    }
-    else {
-    	motor[claw] = 0;
+		//Claw
+		if (vexRT[Btn5U]) {
+			motor[claw] = -clawSpeed;
+		}
+		else if (vexRT[Btn5D]) {
+			motor[claw] = clawSpeed;
+		}
+		else {
+			motor[claw] = 0;
 		}
 
 		wait1Msec(1);
