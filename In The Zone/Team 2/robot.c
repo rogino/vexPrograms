@@ -125,8 +125,18 @@ task autonomous() {
 		Thus, sqrt(2*24^2)-18
 		In meters: (sqrt(2*24^2)-18)*0.0254=0.4049
 	*/
-	
+	motor[claw] = -clawSpeed;
+	wait1Msec(500);
+	motor[claw] = -clawSlowSpeed;
+	motor[armL] = 40;
+	wait1Msec(800);
+	motor[armL] = 20;
 	driveForwardsNMeters(0.405, 4, ticksPerRev[0], 50);
+	wait1Msec(300);
+	
+	motor[claw] = clawSpeed;
+	wait1Msec(400);
+	motor[claw] = 0;
 	
 }
 
