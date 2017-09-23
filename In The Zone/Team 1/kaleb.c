@@ -71,7 +71,7 @@ const int clawSpeed = 127;
 
 const int rotateSpeed = 100;
 
-const int armSpeed = 127;
+const int armSpeed = 40;
 int correctJoystick(int min, int val) {
 	//Joystick not always centered at 0. If below certain threshold, returns 0
 	if (-min < val || val < min) {
