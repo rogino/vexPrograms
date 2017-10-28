@@ -3,12 +3,14 @@
 #pragma config(Sensor, dgtl2,  armTop,         sensorTouch)
 #pragma config(Sensor, dgtl9,  l,              sensorDigitalOut)
 #pragma config(Sensor, dgtl10, r,              sensorDigitalOut)
+#pragma config(Sensor, dgtl12, defaultDrive,   sensorDigitalIn)
 #pragma config(Sensor, I2C_1,  RQuad,          sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Sensor, I2C_2,  LQuad,          sensorQuadEncoderOnI2CPort,    , AutoAssign )
 #pragma config(Motor,  port1,           FR,            tmotorVex393_HBridge, openLoop, reversed)
 #pragma config(Motor,  port2,           armR,          tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port3,           armL,          tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port4,           claw,          tmotorServoStandard, openLoop)
+#pragma config(Motor,  port7,           push,          tmotorServoContinuousRotation, openLoop)
 #pragma config(Motor,  port8,           FL,            tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port9,           BL,            tmotorVex393_MC29, openLoop, encoderPort, I2C_2)
 #pragma config(Motor,  port10,          BR,            tmotorVex393_HBridge, openLoop, reversed, encoderPort, I2C_1)
@@ -32,7 +34,10 @@ const int armSpeed = 80;
 const int armSlowSpeed = 40;
 const int clawSpeed = 100;
 const int clawSlowSpeed = 40;
-bool isTank = false;
+const int pushSpeed = 127;
+bool isTank = SensorValue[defaultDrive]?false:true;
+//If the jumper cable is plugged in, default is tank.
+
 bool previouslyPressed = false;
 bool pneumaticsWasPressed = false;
 bool isDown = false;
@@ -230,7 +235,8 @@ task usercontrol() {
 		// .....................................................................................
 		wait1Msec(10);
 
-		if (vexRT[Btn8R]) autoTest();
+
+		if (vexRT[Btn8L]) autoTest();
 
 		if (isTank) {
 			drive(vexRT[Ch3], vexRT[Ch2]);
@@ -240,7 +246,7 @@ task usercontrol() {
 			//drive(-vexRT[AccelY] + vexRT[AccelX], -vexRT[AccelY] - vexRT[AccelX]);
 		}
 
-		if (vexRT[Btn8D]) {
+		if (vexRT[Btn8U]) {
 			if (!previouslyPressed) {
 				//If was not previously pressed
 				isTank = !isTank; //Change mode
@@ -292,6 +298,17 @@ task usercontrol() {
 
 		else if (!vexRT[Btn7D]) {
 			pneumaticsWasPressed = false; //Switch pneumatics position only when pressed
+		}
+
+		//Pusher
+		if (vexRT[Btn8R]) {
+			motor[push] = pushSpeed;
+		}
+		else if (vexRT[Btn8D]) {
+			motor[push] = -pushSpeed;
+		}
+		else {
+			motor[push] = 0;
 		}
 	}
 }
