@@ -1,4 +1,5 @@
-#pragma config(Sensor, dgtl12, limitArmUp,     sensorTouch)
+#pragma config(Sensor, dgtl11, armLimitUp,     sensorTouch)
+#pragma config(Sensor, dgtl12, swingArm,       sensorDigitalOut)
 #pragma config(Motor,  port1,           driveL,        tmotorVex393_HBridge, openLoop)
 #pragma config(Motor,  port2,           armL,          tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port8,           intake,        tmotorVex393_MC29, openLoop)
@@ -63,7 +64,8 @@ void pre_auton()
 /*---------------------------------------------------------------------------*/
 
 void driveStraight(int speed) {
-	motor[driveL] = motor[driveR] = speed;
+	motor[driveL] = speed;
+	motor[driveR] = speed;
 }
 
 void armUp(int speed) {
@@ -71,15 +73,13 @@ void armUp(int speed) {
 }
 
 
-task autonomous()
-{
-  // ..........................................................................
-  // Insert user code here.
-  // ..........................................................................
+void drive(int l, int r) {
+		motor[driveL] = l;
+		motor[driveR] = r;
+}
 
-  // Remove this function call once you have "real" code.
-	//Arm up, drive forward, intake, drive back
 
+void auto() {
 	armUp(-60);
 	wait1Msec(500);
 	armUp(0);
@@ -94,6 +94,19 @@ task autonomous()
   motor[intake] = 0;
 }
 
+
+task autonomous()
+{
+  // ..........................................................................
+  // Insert user code here.
+  // ..........................................................................
+
+  // Remove this function call once you have "real" code.
+	//Arm up, drive forward, intake, drive back
+	auto();
+}
+
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                              User Control Task                            */
@@ -105,24 +118,59 @@ task autonomous()
 /*---------------------------------------------------------------------------*/
 
 
+void flipPneumatics(bool direction) {
+	SensorValue[swingArm] = direction?1:0;
+}
 
+bool currentPneumaticsDirection = true;
+bool pneumaticsWasPressed = false;
 
+bool driveIsTank = true;
+bool driveWasPressed = false;
 task usercontrol()
 {
   // User control code here, inside the loop
 
   while (true)
   {
-  	motor[driveR] = vexRT[Ch2];
-  	motor[driveL] = vexRT[Ch3];
+  	if (vexRT[Btn7D]) {
+  		if (!pneumaticsWasPressed) {
+  			flipPneumatics(currentPneumaticsDirection);
+  			currentPneumaticsDirection = !currentPneumaticsDirection;
+  			pneumaticsWasPressed = true;
+  		}
+  	}
+  	else pneumaticsWasPressed = false;
+
+  	if (vexRT[Btn8D]) {
+  		if (!driveWasPressed) {
+  				driveIsTank = !driveIsTank;
+  				driveWasPressed = true;
+  		}
+  	}
+  	else {
+  		driveWasPressed = false;
+  	}
+
+  	if (driveIsTank) {
+  		drive(vexRT[Ch3], vexRT[Ch2]);
+  	}
+  	else {
+  		drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]);
+  	}
 
 
-  	if (vexRT[Btn5D]) armUp(-armSpeed);
+		if (vexRT[Btn5D] && !SensorValue[armLimitUp]) armUp(-armSpeed); //Up
 		else if (vexRT[Btn5U]) armUp(armSpeed);
 		else armUp(0);
+
 
   	if (vexRT[Btn6D]) motor[intake] = intakeSpeed;
 		else if (vexRT[Btn6U]) motor[intake] = -intakeSpeed;
 		else motor[intake] = 0;
+		/*
+		if (vexRT[Btn8U]) {
+			auto();
+		}*/
   }
 }
