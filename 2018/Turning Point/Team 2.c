@@ -24,8 +24,8 @@
 
 bool driveIsTank = true;
 bool driveWasPressed = false;
-int armSpeed = 65;
-int armStall = 30; //stall speed to keep arm in place
+int armSpeed = 100;
+int armStall = 35; //stall speed to keep arm in place
 
 
 void pre_auton()
