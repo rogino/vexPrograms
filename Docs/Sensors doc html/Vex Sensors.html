@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<!-- saved from url=(0055)http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview -->
+<html lang="en" dir="ltr" class="client-js"><script type="text/javascript">window["_gaUserPrefs"] = { ioo : function() { return true; } }</script><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>VEX2 Sensors Overview - ROBOTC API Guide</title>
+<meta name="generator" content="MediaWiki 1.22.1">
+<link rel="shortcut icon" href="http://www.robotc.net/favicon.ico">
+<link rel="search" type="application/opensearchdescription+xml" href="http://www.robotc.net/w/opensearch_desc.php" title="ROBOTC API Guide (en)">
+<link rel="EditURI" type="application/rsd+xml" href="http://www.robotc.net/w/api.php?action=rsd">
+<link rel="alternate" type="application/atom+xml" title="ROBOTC API Guide Atom feed" href="http://www.robotc.net/w/index.php?title=Special:RecentChanges&amp;feed=atom">
+<link rel="stylesheet" href="./Vex Sensors_files/load.php">
+<style>
+.mw-collapsible-toggle{float:right} li .mw-collapsible-toggle{float:none} .mw-collapsible-toggle-li{list-style:none}
+/* cache key: robotc_wiki:resourceloader:filter:minify-css:7:4250852ed2349a0d4d0fc6509a3e7d4c */
+.suggestions{overflow:hidden;position:absolute;top:0;left:0;width:0;border:none;z-index:1099;padding:0;margin:-1px -1px 0 0} html > body .suggestions{margin:-1px 0 0 0}.suggestions-special{position:relative;background-color:white;cursor:pointer;border:solid 1px #aaaaaa;padding:0;margin:0;margin-top:-2px;display:none;padding:0.25em 0.25em;line-height:1.25em}.suggestions-results{background-color:white;cursor:pointer;border:solid 1px #aaaaaa;padding:0;margin:0}.suggestions-result{color:black;margin:0;line-height:1.5em;padding:0.01em 0.25em;text-align:left}.suggestions-result-current{background-color:#4C59A6;color:white}.suggestions-special .special-label{color:gray;text-align:left}.suggestions-special .special-query{color:black;font-style:italic;text-align:left}.suggestions-special .special-hover{background-color:silver}.suggestions-result-current .special-label,.suggestions-result-current .special-query{color:white}.autoellipsis-matched,.highlight{font-weight:bold}
+/* cache key: robotc_wiki:resourceloader:filter:minify-css:7:9780324491b653a3780e2d029bdc140c */
+#mw-panel.collapsible-nav div.portal{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAABCAMAAAA7MLYKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAEtQTFRF29vb2tra4ODg6urq5OTk4uLi6+vr7e3t7Ozs8PDw5+fn4+Pj4eHh3d3d39/f6Ojo5eXl6enp8fHx8/Pz8vLy7+/v3Nzc2dnZ2NjYnErj7QAAAD1JREFUeNq0wQUBACAMALDj7hf6JyUFGxzEnYhC9GaNPG1xVffGDErk/iCigLl1XV2xM49lfAxEaSM+AQYA9HMKuv4liFQAAAAASUVORK5CYII=);background-image:url(http://www.robotc.net/w/extensions/Vector/modules/images/portal-break.png?2016-06-29T16:11:40Z)!ie;background-position:left top;background-repeat:no-repeat;padding:0.25em 0 !important;margin:-11px 9px 10px 11px}#mw-panel.collapsible-nav div.portal h5{color:#4D4D4D;font-weight:normal;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA9QTFRFeXl53d3dmpqasbGx////GU0iEgAAAAV0Uk5T/////wD7tg5TAAAAK0lEQVQI12NwgQIG0hhCDAwMTCJAhqMCA4MiWEoIJABiOCooQhULi5BqMgB2bh4svs8t+QAAAABJRU5ErkJggg==) left center no-repeat;background:url(http://www.robotc.net/w/extensions/Vector/modules/images/open.png?2016-06-29T16:11:40Z) left center no-repeat!ie;padding:4px 0 3px 1.5em;margin-bottom:0px}#mw-panel.collapsible-nav div.collapsed h5{color:#0645AD;background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAxQTFRF3d3deXl5////nZ2dQA6SoAAAAAN0Uk5T//8A18oNQQAAADNJREFUeNpiYEIDDMQKMKALMDOgCTDCRWACcBG4AEwEIcDITEAFuhnotmC4g4EEzwEEGAADqgHmQSPJKgAAAABJRU5ErkJggg==) left center no-repeat;background:url(http://www.robotc.net/w/extensions/Vector/modules/images/closed-ltr.png?2016-06-29T16:11:40Z) left center no-repeat!ie;margin-bottom:0px}#mw-panel.collapsible-nav div h5:hover{cursor:pointer;text-decoration:none}#mw-panel.collapsible-nav div.collapsed h5:hover{text-decoration:underline}#mw-panel.collapsible-nav div.portal div.body{background:none !important;padding-top:0px;display:none}#mw-panel.collapsible-nav div.persistent div.body{display:block}#mw-panel.collapsible-nav div.first h5{display:none}#mw-panel.collapsible-nav div.persistent h5{background:none !important;padding-left:0.7em;cursor:default}#mw-panel.collapsible-nav div.portal div.body ul li{padding:0.25em 0}#mw-panel.collapsible-nav div.first{background-image:none;margin-top:0px}#mw-panel.collapsible-nav div.persistent div.body{margin-left:0.5em}
+/* cache key: robotc_wiki:resourceloader:filter:minify-css:7:a679c8b82c623fd026ca5efd4078b482 */
+.postedit-container{margin:0 auto;position:fixed;top:0;height:0;left:50%;z-index:1000;font-size:13px}.postedit-container:hover{cursor:pointer}.postedit{position:relative;top:0.6em;left:-50%;padding:.6em 3.6em .6em 1.1em;line-height:1.5625em;color:#626465;background-color:#f4f4f4;border:1px solid #dcd9d9;text-shadow:0 0.0625em 0 rgba(255,255,255,0.5);border-radius:5px;-webkit-box-shadow:0 2px 5px 0 #ccc;box-shadow:0 2px 5px 0 #ccc;-webkit-transition:all 0.25s ease-in-out;-moz-transition:all 0.25s ease-in-out;-ms-transition:all 0.25s ease-in-out;-o-transition:all 0.25s ease-in-out;transition:all 0.25s ease-in-out}.skin-monobook .postedit{top:6em !important}.postedit-faded{opacity:0}.postedit-icon{padding-left:41px;  line-height:25px;background-repeat:no-repeat;background-position:8px 50%}.postedit-icon-checkmark{background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABblBMVEUAAAD///////9PfTf///80aRdTgjn///9Feij///////////9Rfzf///////////9PfjZRgDh1o1xOfTb///////+bwYqLtnj///////9PfTa82K////9WhT6YxIL///9QgDdTgzr////////j7uDl7eLq8efi693k7OH///////9UhjuBr2rp9uRUhjr///9YljVKgir///9WiTlYjT3////9/v57vFlbkT5PjC9dlD/5/fhuq09stUTs9uhxuElctCpfnT1huDFloEZloUZmpENmvDZpvDxpvTxqvjxrvT5rvT9rwTxsqktswD5uwkBvuUdxw0NztFBztU9ztVBzwkp0tlJ1xkd2t1R3uVR4w1F4xk54x014yE15uVZ5v1R5xVB6v1R7yFJ8wVh9xVl9yFR9yVd9ylN+xVh+yFd/x1l/yFeAylmEx1+Ny2uY0Hqe04Wj1Ymv3Ze33qLD47TJ5L3O6cPU7Mrq9eb2+/Q4j37OAAAAQHRSTlMAAQIEBAUFBQwPFB4fJCUoKiosQEhJS01RUlZZXmdydXaChYuSlJSWmJmoq6uur8LExcvM19fg5ejt8fX2+Pr7SljgewAAAKpJREFUGBkFwQNCAwAAAMDLtl3LtrG4rWXbtvX77gAgZ6grFwC0bhwNVgKgdPZx8b0dgLi+s7Wn0VoAqpfOI9+BNADZI7fLrz2pSEwGHZuH+78lSK8ZLkLezF3ooyUG3VPXq2USei9WngeyoG195yBYWDF3E/2pAhl1e9Gr8bGT+bfOFCC2fnvh4X7rcqIAQNNu+HT6sxkAjceTL/2ZAIhv+PorBwBJxfkA//dFHSCBy/UTAAAAAElFTkSuQmCC);background-image:url(http://www.robotc.net/w/resources/mediawiki.action/images/green-checkmark.png?2016-06-29T16:11:40Z)!ie;background-position:left}.postedit-close{position:absolute;padding:0 .8em;right:0;top:0;font-size:1.25em;font-weight:bold;line-height:2.3em;color:black;text-shadow:0 0.0625em 0 white;text-decoration:none;opacity:0.2;filter:alpha(opacity=20)}.postedit-close:hover{color:black;text-decoration:none;opacity:0.4;filter:alpha(opacity=40)}
+/* cache key: robotc_wiki:resourceloader:filter:minify-css:7:ad1abf1f2739b03f3e77d7900a91d651 */</style><style>
+.suggestions a.mw-searchSuggest-link,.suggestions a.mw-searchSuggest-link:hover,.suggestions a.mw-searchSuggest-link:active,.suggestions a.mw-searchSuggest-link:focus{text-decoration:none;color:black}.suggestions-result-current a.mw-searchSuggest-link,.suggestions-result-current a.mw-searchSuggest-link:hover,.suggestions-result-current a.mw-searchSuggest-link:active,.suggestions-result-current a.mw-searchSuggest-link:focus{color:white}
+/* cache key: robotc_wiki:resourceloader:filter:minify-css:7:52b1797f70c7e4094dfa4191101944e8 */</style><meta name="ResourceLoaderDynamicStyles" content="">
+<link rel="stylesheet" href="./Vex Sensors_files/load(1).php">
+<style>a:lang(ar),a:lang(ckb),a:lang(kk-arab),a:lang(mzn),a:lang(ps),a:lang(ur){text-decoration:none}
+/* cache key: robotc_wiki:resourceloader:filter:minify-css:7:c6906a744dfb200c01f2fd330eb293e7 */</style>
+
+<script src="./Vex Sensors_files/load(2).php"></script><script src="./Vex Sensors_files/load(3).php"></script>
+<script>if(window.mw){
+mw.config.set({"wgCanonicalNamespace":"","wgCanonicalSpecialPageName":false,"wgNamespaceNumber":0,"wgPageName":"VEX2_Sensors_Overview","wgTitle":"VEX2 Sensors Overview","wgCurRevisionId":5448,"wgRevisionId":5448,"wgArticleId":119,"wgIsArticle":true,"wgIsRedirect":false,"wgAction":"view","wgUserName":null,"wgUserGroups":["*"],"wgCategories":[],"wgBreakFrames":false,"wgPageContentLanguage":"en","wgPageContentModel":"wikitext","wgSeparatorTransformTable":["",""],"wgDigitTransformTable":["",""],"wgDefaultDateFormat":"dmy","wgMonthNames":["","January","February","March","April","May","June","July","August","September","October","November","December"],"wgMonthNamesShort":["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"wgRelevantPageName":"VEX2_Sensors_Overview","wgIsProbablyEditable":false,"wgRestrictionEdit":[],"wgRestrictionMove":[],"wgWikiEditorEnabledModules":{"toolbar":false,"dialogs":false,"hidesig":true,"templateEditor":false,"templates":false,"preview":false,"previewDialog":false,"publish":false,"toc":false},"wgVectorEnabledModules":{"collapsiblenav":true,"collapsibletabs":false,"editwarning":true,"expandablesearch":false,"footercleanup":false,"sectioneditlinks":false,"simplesearch":true,"experiments":true},"Geo":{"city":"","country":""},"wgNoticeProject":"wikipedia"});
+}</script><script>if(window.mw){
+mw.loader.implement("user.options",function(){mw.user.options.set({"ccmeonemails":0,"cols":80,"date":"default","diffonly":0,"disablemail":0,"disablesuggest":0,"editfont":"default","editondblclick":0,"editsection":1,"editsectiononrightclick":0,"enotifminoredits":0,"enotifrevealaddr":0,"enotifusertalkpages":1,"enotifwatchlistpages":0,"extendwatchlist":0,"fancysig":0,"forceeditsummary":0,"gender":"unknown","hideminor":0,"hidepatrolled":0,"imagesize":2,"justify":0,"math":1,"minordefault":0,"newpageshidepatrolled":0,"nocache":0,"noconvertlink":0,"norollbackdiff":0,"numberheadings":0,"previewonfirst":0,"previewontop":1,"rcdays":7,"rclimit":50,"rememberpassword":0,"rows":25,"searchlimit":20,"showhiddencats":0,"shownumberswatching":1,"showtoc":1,"showtoolbar":1,"skin":"vector","stubthreshold":0,"thumbsize":2,"underline":2,"uselivepreview":0,"usenewrc":0,"vector-simplesearch":1,"watchcreations":0,"watchdefault":0,"watchdeletion":0,"watchlistdays":3,"watchlisthideanons":0,"watchlisthidebots":0,
+"watchlisthideliu":0,"watchlisthideminor":0,"watchlisthideown":0,"watchlisthidepatrolled":0,"watchmoves":0,"wllimit":250,"useeditwarning":1,"prefershttps":1,"language":"en","variant-gan":"gan","variant-iu":"iu","variant-kk":"kk","variant-ku":"ku","variant-shi":"shi","variant-sr":"sr","variant-tg":"tg","variant-uz":"uz","variant-zh":"zh","searchNs0":true,"searchNs1":false,"searchNs2":false,"searchNs3":false,"searchNs4":false,"searchNs5":false,"searchNs6":false,"searchNs7":false,"searchNs8":false,"searchNs9":false,"searchNs10":false,"searchNs11":false,"searchNs12":false,"searchNs13":false,"searchNs14":false,"searchNs15":false,"variant":"en"});},{},{});mw.loader.implement("user.tokens",function(){mw.user.tokens.set({"editToken":"+\\","patrolToken":false,"watchToken":false});},{},{});
+/* cache key: robotc_wiki:resourceloader:filter:minify-js:7:5a69c7e0fa6557851b6dea8a62efaffb */
+}</script>
+<script>if(window.mw){
+mw.loader.load(["mediawiki.page.startup","mediawiki.legacy.wikibits","mediawiki.legacy.ajax","skins.vector.js"]);
+}</script><script src="./Vex Sensors_files/load(4).php"></script>
+<style type="text/css">/*<![CDATA[*/
+.source-robotc {line-height: normal;}
+.source-robotc li, .source-robotc pre {
+	line-height: normal; border: 0px none white;
+}
+/**
+ * GeSHi Dynamically Generated Stylesheet
+ * --------------------------------------
+ * Dynamically generated stylesheet for robotc
+ * CSS class: source-robotc, CSS id: 
+ * GeSHi (C) 2004 - 2007 Nigel McNie (http://qbnz.com/highlighter)
+ */
+.source-robotc .de1, .source-robotc .de2 {font-family: 'Courier New', Courier, monospace; font-weight: normal;}
+.source-robotc  {}
+.source-robotc .head {}
+.source-robotc .foot {}
+.source-robotc .imp {font-weight: bold; color: red;}
+.source-robotc .ln-xtra {color: #cc0; background-color: #ffc;}
+.source-robotc li {font-family: 'Courier New', Courier, monospace; color: black; font-weight: normal; font-style: normal;}
+.source-robotc li.li2 {font-weight: bold;}
+.source-robotc .kw1 {color: #0000ff; font-weight: bold; font-style: italic;}
+.source-robotc .kw2 {color: #0000b3; font-weight: bold;}
+.source-robotc .kw3 {color: #8b0000; font-weight: normal;}
+.source-robotc .kw4 {color: #0000b3; font-weight: normal; font-style: italic;}
+.source-robotc .co1 {color: #008000;}
+.source-robotc .coMULTI {color: #008000;}
+.source-robotc .es0 {color: #ff0000;}
+.source-robotc .br0 {color: #ff0000;}
+.source-robotc .st0 {color: #8b0000;}
+.source-robotc .nu0 {color: #8b0000;}
+.source-robotc .me1 {color: #00008b; font-weight: bold;}
+.source-robotc .me2 {color: #00008b; font-weight: bold;}
+
+/*]]>*/
+</style>
+<style type="text/css">/*<![CDATA[*/
+@import "/w/index.php?title=MediaWiki:Geshi.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+/*]]>*/
+</style><!--[if lt IE 7]><style type="text/css">body{behavior:url("/w/skins/vector/csshover.min.htc")}</style><![endif]--><script async="" src="./Vex Sensors_files/load(5).php"></script><script async="" src="./Vex Sensors_files/load(6).php"></script></head>
+<body class="mediawiki ltr sitedir-ltr ns-0 ns-subject page-VEX2_Sensors_Overview skin-vector action-view vector-animateLayout">
+		<div id="mw-page-base" class="noprint"></div>
+		<div id="mw-head-base" class="noprint"></div>
+		<div id="content" class="mw-body" role="main">
+			<a id="top"></a>
+			<div id="mw-js-message" style="display:none;"></div>
+						<div id="siteNotice"><!-- centralNotice loads here --><script type="text/javascript">
+/* <![CDATA[ */
+document.writeln("\x3cdiv id=\"localNotice\" lang=\"en\" dir=\"ltr\"\x3e\x3cdiv style=\"position: relative; top: 0px; right: 20px; width: 100%; height: 65px;\"\x3e\n \x3cdiv style=\"position: absolute; right: 0px;\"\x3e\x3cdiv class=\"floatright\"\x3e\x3ca href=\"/wikiarchive/\" title=\"\"\x3e\x3cimg alt=\"Infoheader3.png\" src=\"http://s3.amazonaws.com/robotc-wiki/wiki-images/8/87/Infoheader3.png\" width=\"181\" height=\"64\" /\x3e\x3c/a\x3e\x3c/div\x3e\x3c/div\x3e\n \x3cdiv style=\"position: absolute; left: 20px;\"\x3e\x3cdiv class=\"floatleft\"\x3e\x3ca href=\"/wikiarchive/\" title=\"ROBOTC\"\x3e\x3cimg alt=\"ROBOTC\" src=\"http://s3.amazonaws.com/robotc-wiki/wiki-images/b/b9/Robotc_textual_logo.png\" width=\"327\" height=\"65\" /\x3e\x3c/a\x3e\x3c/div\x3e\x3c/div\x3e\n\x3c/div\x3e\n\x3c/div\x3e");
+/* ]]> */
+</script><div id="localNotice" lang="en" dir="ltr"><div style="position: relative; top: 0px; right: 20px; width: 100%; height: 65px;">
+ <div style="position: absolute; right: 0px;"><div class="floatright"><a href="http://www.robotc.net/wikiarchive/" title=""><img alt="Infoheader3.png" src="./Vex Sensors_files/Infoheader3.png" width="181" height="64"></a></div></div>
+ <div style="position: absolute; left: 20px;"><div class="floatleft"><a href="http://www.robotc.net/wikiarchive/" title="ROBOTC"><img alt="ROBOTC" src="./Vex Sensors_files/Robotc_textual_logo.png" width="327" height="65"></a></div></div>
+</div>
+</div>
+</div>
+						<h1 id="firstHeading" class="firstHeading" lang="en"><span dir="auto">VEX2 Sensors Overview</span></h1>
+			<div id="bodyContent">
+								<div id="siteSub">From ROBOTC API Guide</div>
+								<div id="contentSub"></div>
+												<div id="jump-to-nav" class="mw-jump">
+					Jump to:					<a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#mw-navigation">navigation</a>, 					<a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#p-search">search</a>
+				</div>
+				<div id="mw-content-text" lang="en" dir="ltr" class="mw-content-ltr"><div id="yambe"><a href="http://www.robotc.net/wikiarchive/VEX2" title="VEX2">CORTEX</a> → Sensors Overview</div>
+<p><br>
+</p>
+<table>
+
+<tbody><tr>
+<td><i>For ROBOTC CORTEX Sensor </i>functions<i>, check out the <a href="http://www.robotc.net/wikiarchive/VEX2_Functions_Sensors" title="VEX2 Functions Sensors">CORTEX Sensor Functions</a> page!</i>
+</td></tr>
+</tbody></table>
+<p><br>
+</p>
+<table>
+
+<tbody><tr>
+<td style="vertical-align:top"><div id="toc" class="toc"><div id="toctitle"><h2>Contents</h2><span class="toctoggle">&nbsp;[<a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#" class="internal" id="togglelink">hide</a>]&nbsp;</span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Analog_Sensors"><span class="tocnumber">1</span> <span class="toctext">Analog Sensors</span></a>
+<ul>
+<li class="toclevel-2 tocsection-2"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Light"><span class="tocnumber">1.1</span> <span class="toctext">Light</span></a></li>
+<li class="toclevel-2 tocsection-3"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Potentiometer"><span class="tocnumber">1.2</span> <span class="toctext">Potentiometer</span></a></li>
+<li class="toclevel-2 tocsection-4"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Line_Follower"><span class="tocnumber">1.3</span> <span class="toctext">Line Follower</span></a></li>
+<li class="toclevel-2 tocsection-5"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Gyro"><span class="tocnumber">1.4</span> <span class="toctext">Gyro</span></a></li>
+<li class="toclevel-2 tocsection-6"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Accelerometer"><span class="tocnumber">1.5</span> <span class="toctext">Accelerometer</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1 tocsection-7"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Digital_Sensors"><span class="tocnumber">2</span> <span class="toctext">Digital Sensors</span></a>
+<ul>
+<li class="toclevel-2 tocsection-8"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Touch"><span class="tocnumber">2.1</span> <span class="toctext">Touch</span></a></li>
+<li class="toclevel-2 tocsection-9"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Sonar"><span class="tocnumber">2.2</span> <span class="toctext">Sonar</span></a></li>
+<li class="toclevel-2 tocsection-10"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Quadrature_Encoder"><span class="tocnumber">2.3</span> <span class="toctext">Quadrature Encoder</span></a></li>
+<li class="toclevel-2 tocsection-11"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Digital_In"><span class="tocnumber">2.4</span> <span class="toctext">Digital In</span></a></li>
+<li class="toclevel-2 tocsection-12"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#Digital_Out"><span class="tocnumber">2.5</span> <span class="toctext">Digital Out</span></a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+</td>
+<td style="vertical-align:top">
+<table width="100" cellpadding="2" cellspacing="0" style="border-collapse: collapse; border-width: 1px; border-style: solid; border-color: #000">
+<tbody><tr>
+<th colspan="2" class="wikiHeader">Color Key
+</th></tr>
+<tr>
+<td class="wikiText" width="75%" style="border-style: solid; border-width: 1px 0px 0px 0px">Function:
+</td>
+<td width="25%" style="border-style: solid; border-width: 1px 0px 0px 0px;" class="colorKeyFunc">
+</td></tr>
+<tr>
+<td class="wikiText" width="75%" style="border-style: solid; border-width: 0px 0px 0px 0px">Variable:
+</td>
+<td width="25%" style="border-style: solid; border-width: 0px 0px 0px 0px;" class="colorKeyVar">
+</td></tr></tbody></table>
+</td></tr>
+</tbody></table>
+<p><br>
+</p>
+<h2><span class="mw-headline" id="Analog_Sensors">Analog Sensors</span></h2>
+<table style="font-family:Verdana, Geneva, sans-serif; color:black; background-color:#FFFFFF; text-align:left; font-size:100%;" width="100%" cellpadding="5%" cellspacing="0" border="0">
+
+<tbody><tr>
+<td>There are 5 main types of Analog Sensors for the VEX CORTEX:
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Light">Light</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_light_sensor.png" class="image"><img alt="Vex light sensor.png" src="./Vex Sensors_files/Vex_light_sensor.png" width="422" height="171"></a>
+<br>
+The Light sensor, also known as the Reflection sensor, returns values ranging between 0 and 4095.  0 is the lightest reading and 4095 is the darkest.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">in1</span>,    lightSensor,    <span class="kw3">sensorReflection</span><span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;                <span class="co1">// wait 2 seconds before exectuing following code</span>
+  <span class="kw2">bMotorReflected</span><span class="br0">[</span><span class="kw3">port2</span><span class="br0">]</span> = <span class="kw1">true</span>;  <span class="co1">// reflects direction of motor on port 2</span>
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw1">true</span><span class="br0">)</span>                     <span class="co1">// infinite loop:</span>
+  <span class="br0">{</span>
+    <span class="kw2">clearLCDLine</span><span class="br0">(</span><span class="nu0">0</span><span class="br0">)</span>;                                <span class="co1">// clear the top VEX LCD line</span>
+    <span class="kw2">clearLCDLine</span><span class="br0">(</span><span class="nu0">1</span><span class="br0">)</span>;                                <span class="co1">// clear the bottom VEX LCD line</span>
+&nbsp;
+    <span class="kw2">setLCDPosition</span><span class="br0">(</span><span class="nu0">0</span>,<span class="nu0">0</span><span class="br0">)</span>;                            <span class="co1">// set the VEX LCD cursor the first line, first space</span>
+    <span class="kw2">displayNextLCDString</span><span class="br0">(</span><span class="st0">"Light Sensor:"</span><span class="br0">)</span>;          <span class="co1">// display "Light Sensor:" on the top line</span>
+&nbsp;
+    <span class="kw2">setLCDPosition</span><span class="br0">(</span><span class="nu0">1</span>,<span class="nu0">0</span><span class="br0">)</span>;                            <span class="co1">// set the VEX LCD cursor the second line, first space</span>
+    <span class="kw2">displayNextLCDNumber</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">(</span>lightSensor<span class="br0">)</span><span class="br0">)</span>; <span class="co1">// display the reading of the lightSensor sensor</span>
+&nbsp;
+    <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">50</span><span class="br0">)</span>;                                  <span class="co1">// wait 50 milliseconds to help display properly</span>
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Potentiometer">Potentiometer</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_pot.png" class="image"><img alt="Vex pot.png" src="./Vex Sensors_files/Vex_pot.png" width="448" height="168"></a>
+<br>
+Returns an analog value between 0 and 4095 <i>(although mechanical stops my limit the values to between 5 and 4092)</i>.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">in1</span>,    potentiometer,  <span class="kw3">sensorPotentiometer</span><span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;                <span class="co1">// wait 2 seconds before exectuing following code</span>
+  <span class="kw2">bMotorReflected</span><span class="br0">[</span><span class="kw3">port2</span><span class="br0">]</span> = <span class="kw1">true</span>;  <span class="co1">// reflects direction of motor on port 2</span>
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw1">true</span><span class="br0">)</span>                     <span class="co1">// infinite loop:</span>
+  <span class="br0">{</span>
+    <span class="kw2">clearLCDLine</span><span class="br0">(</span><span class="nu0">0</span><span class="br0">)</span>;                                  <span class="co1">// clear the top VEX LCD line</span>
+    <span class="kw2">clearLCDLine</span><span class="br0">(</span><span class="nu0">1</span><span class="br0">)</span>;                                  <span class="co1">// clear the bottom VEX LCD line</span>
+&nbsp;
+    <span class="kw2">setLCDPosition</span><span class="br0">(</span><span class="nu0">0</span>,<span class="nu0">0</span><span class="br0">)</span>;                              <span class="co1">// set the VEX LCD cursor the first line, first space</span>
+    <span class="kw2">displayNextLCDString</span><span class="br0">(</span><span class="st0">"Potentiometer:"</span><span class="br0">)</span>;           <span class="co1">// display "Potentiometer:" on the top line</span>
+&nbsp;
+    <span class="kw2">setLCDPosition</span><span class="br0">(</span><span class="nu0">1</span>,<span class="nu0">0</span><span class="br0">)</span>;                              <span class="co1">// set the VEX LCD cursor the second line, first space</span>
+    <span class="kw2">displayNextLCDNumber</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">(</span>potentiometer<span class="br0">)</span><span class="br0">)</span>; <span class="co1">// display the reading of the potentiometer sensor</span>
+&nbsp;
+    <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">50</span><span class="br0">)</span>;                                    <span class="co1">// wait 50 milliseconds to help display properly</span>
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Line_Follower">Line Follower</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_linefollower.png" class="image"><img alt="Vex linefollower.png" src="./Vex Sensors_files/Vex_linefollower.png" width="400" height="277"></a>
+<br>
+Returns values ranging between 0 and 4095.  0 is the lightest reading and 4095 is the darkest.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">in1</span>,    lineFollower,   <span class="kw3">sensorLineFollower</span><span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;                <span class="co1">// wait 2 seconds before exectuing following code</span>
+  <span class="kw2">bMotorReflected</span><span class="br0">[</span><span class="kw3">port2</span><span class="br0">]</span> = <span class="kw1">true</span>;  <span class="co1">// reflects direction of motor on port 2</span>
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw1">true</span><span class="br0">)</span>                     <span class="co1">// infinite loop:</span>
+  <span class="br0">{</span>
+    <span class="kw1">if</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">(</span>lineFollower<span class="br0">)</span> &lt; <span class="nu0">950</span><span class="br0">)</span> <span class="co1">// if the lineFollower sensor reads a value less than 950:</span>
+    <span class="br0">{</span>
+      <span class="co1">// turn left:</span>
+      <span class="kw2">motor</span><span class="br0">[</span><span class="kw3">port2</span><span class="br0">]</span> = <span class="nu0">50</span>;  <span class="co1">// motor on port 2 is run at power level 50</span>
+      <span class="kw2">motor</span><span class="br0">[</span><span class="kw3">port3</span><span class="br0">]</span> = <span class="nu0">0</span>;   <span class="co1">// motor on port 3 is stopped at power level 0</span>
+    <span class="br0">}</span>
+    <span class="kw1">else</span>  <span class="co1">// lineFollower sensor reads a value greater than or equal to 950:</span>
+    <span class="br0">{</span>
+      <span class="kw2">motor</span><span class="br0">[</span><span class="kw3">port2</span><span class="br0">]</span> = <span class="nu0">0</span>;   <span class="co1">// motor on port 2 is stopped at power level 0</span>
+      <span class="kw2">motor</span><span class="br0">[</span><span class="kw3">port3</span><span class="br0">]</span> = <span class="nu0">50</span>;  <span class="co1">// motor on port 3 is run at power level 50</span>
+    <span class="br0">}</span>
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Gyro">Gyro</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_gyro.png" class="image"><img alt="Vex gyro.png" src="./Vex Sensors_files/Vex_gyro.png" width="135" height="135"></a>
+<br>
+As the Gyro is turned, the values it returns are in <b>tenths of degrees</b>,  positive and negative. Thus, a SensorValue of 3600 equals 360 degrees,  or one full rotation. When the sensor is mounted horizontally,  counter-clockwise movements will return values from 0 to -3600;  clockwise movements will return values from 0 to 3600. Once the gyro  completes one full revolution, the sensor value will “roll-over” to 0 by  default (for example: …3597, 3598, 3599, 3600, 0, 1, 2, 3,…). To change  the “roll-over” point, un-comment line 33 (from the code below) and change the value of  “SensorFullCount” from 3600 to the desired value (7200, 18000, ect)
+</p><p><i>For more information on the Gyro sensor, check out the ROBOTC blog post: <a rel="nofollow" target="_blank" class="external text" href="http://www.robotc.net/blog/2011/10/13/programming-the-vex-gyro-in-robotc/">Programming the VEX Gyro in ROBOTC</a>.</i>
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>, <span class="kw3">port2</span>, rightMotor, <span class="kw3">tmotorNormal</span>, openLoop<span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>, <span class="kw3">port3</span>, leftMotor, <span class="kw3">tmotorNormal</span>, openLoop, reversed<span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard&nbsp;!!*//</span>
+&nbsp;
+<span class="coMULTI">/*+++++++++++++++++++++++++++++++++++++++++++++| Notes |++++++++++++++++++++++++++++++++++++++++++++
+Gyro Based Turns - Basic
+-This program instructs your robot to turn for the specified number of degrees in "degrees10".
+-For best sensor results, clear out the gyro and manually configure it at the begging of the code.
+-The Gyro is configured by default to provide values from 0 to -3600 for clockwise rotation,
+and 0 to 3600 for counter-clockwise rotation
+&nbsp;
+Robot Model(s): Swervebot
+&nbsp;
+[I/O Port] [Name] [Type] [Description]
+Motor Port 2 rightMotor VEX Motor Right side motor
+Motor Port 3 leftMotor VEX Motor Left side motor
+Analog Port 8 in8 VEX Gyro Top-center mounted,
+away from the Cortex
+--------------------------------------------------------------------------------------------------*/</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="co1">//Completely clear out any previous sensor readings by setting the port to "sensorNone"</span>
+  <span class="kw2">SensorType</span><span class="br0">[</span><span class="kw3">in8</span><span class="br0">]</span> = <span class="kw3">sensorNone</span>;
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">1000</span><span class="br0">)</span>;
+  <span class="co1">//Reconfigure Analog Port 8 as a Gyro sensor and allow time for ROBOTC to calibrate it</span>
+  <span class="kw2">SensorType</span><span class="br0">[</span><span class="kw3">in8</span><span class="br0">]</span> = <span class="kw3">sensorGyro</span>;
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;
+&nbsp;
+  <span class="co1">//Adjust SensorScale to correct the scaling for your gyro</span>
+  <span class="co1">//SensorScale[in8] = 260;</span>
+  <span class="co1">//Adjust SensorFullCount to set the "rollover" point. 3600 sets the rollover point to +/-3600</span>
+  <span class="co1">//SensorFullCount[in8] = 3600;</span>
+&nbsp;
+  <span class="co1">//Specify the number of degrees for the robot to turn (1 degree = 10, or 900 = 90 degrees)</span>
+  <span class="kw1">int</span> degrees10 = <span class="nu0">900</span>;
+&nbsp;
+  <span class="co1">//While the absolute value of the gyro is less than the desired rotation...</span>
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw2">abs</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">[</span><span class="kw3">in8</span><span class="br0">]</span><span class="br0">)</span> &lt; degrees10<span class="br0">)</span>
+  <span class="br0">{</span>
+    <span class="co1">//...continue turning</span>
+    <span class="kw2">motor</span><span class="br0">[</span>rightMotor<span class="br0">]</span> = <span class="nu0">25</span>;
+    <span class="kw2">motor</span><span class="br0">[</span>leftMotor<span class="br0">]</span> = <span class="nu0">-25</span>;
+  <span class="br0">}</span>
+&nbsp;
+  <span class="co1">//Brief brake to stop some drift</span>
+  <span class="kw2">motor</span><span class="br0">[</span>rightMotor<span class="br0">]</span> = <span class="nu0">-5</span>;
+  <span class="kw2">motor</span><span class="br0">[</span>leftMotor<span class="br0">]</span> = <span class="nu0">5</span>;
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">250</span><span class="br0">)</span>;
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Accelerometer">Accelerometer</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_accel.png" class="image"><img alt="Vex accel.png" src="./Vex Sensors_files/Vex_accel.png" width="135" height="135"></a>
+<br>
+Returns an analog value between 0 and 4095.  Each Accelerometer Sensor has 3 cables, X, Y, and Z.  The ports you attach them to don't have to be in any particular order <i>(however you WILL need to use 3 ports)</i>.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">in1</span>,    xAxis,          <span class="kw3">sensorAccelerometer</span><span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">in2</span>,    yAxis,          <span class="kw3">sensorAccelerometer</span><span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">in3</span>,    zAxis,          <span class="kw3">sensorAccelerometer</span><span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw1">int</span> nBiasValues<span class="br0">[</span><span class="nu0">3</span><span class="br0">]</span>;
+&nbsp;
+  <span class="kw1">int</span> X_Accel;
+  <span class="kw1">int</span> Y_Accel;
+  <span class="kw1">int</span> Z_Accel;
+&nbsp;
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">500</span><span class="br0">)</span>; <span class="co1">// bias values are being calculated</span>
+&nbsp;
+  <span class="coMULTI">/* store the bias values in an array so that they can be  
+   * displayed in the ROBOTC global variables debug window */</span>
+  nBiasValues<span class="br0">[</span><span class="nu0">0</span><span class="br0">]</span> = SensorBias<span class="br0">[</span>xAxis<span class="br0">]</span>;
+  nBiasValues<span class="br0">[</span><span class="nu0">1</span><span class="br0">]</span> = SensorBias<span class="br0">[</span>yAxis<span class="br0">]</span>;
+  nBiasValues<span class="br0">[</span><span class="nu0">2</span><span class="br0">]</span> = SensorBias<span class="br0">[</span>zAxis<span class="br0">]</span>;
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw1">true</span><span class="br0">)</span>
+  <span class="br0">{</span>
+    <span class="coMULTI">/* also store the actual sensor values so that they can be
+     * easily displayed in the ROBOTC global variables debug window */</span>
+    X_Accel = <span class="kw2">SensorValue</span><span class="br0">[</span>xAxis<span class="br0">]</span>;
+    Y_Accel = <span class="kw2">SensorValue</span><span class="br0">[</span>yAxis<span class="br0">]</span>;
+    Z_Accel = <span class="kw2">SensorValue</span><span class="br0">[</span>zAxis<span class="br0">]</span>;
+&nbsp;
+    <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">100</span><span class="br0">)</span>;
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+</td></tr>
+</tbody></table>
+<p><br>
+</p>
+<h2><span class="mw-headline" id="Digital_Sensors">Digital Sensors</span></h2>
+<table style="font-family:Verdana, Geneva, sans-serif; color:black; background-color:#FFFFFF; text-align:left; font-size:100%;" width="100%" cellpadding="5%" cellspacing="0" border="0">
+
+<tbody><tr>
+<td>There are 6 main types of Analog Sensors for the VEX CORTEX:
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Touch">Touch</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_touch_sensor.png" class="image"><img alt="Vex touch sensor.png" src="./Vex Sensors_files/Vex_touch_sensor.png" width="296" height="247"></a>
+<br>
+Returns a digital value.  "1" means a closed circuit and "0" means an open circuit.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">dgtl6</span>,  touchSensor,         <span class="kw3">sensorTouch</span><span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>,  <span class="kw3">port2</span>,           rightMotor,    <span class="kw3">tmotorNormal</span>, openLoop, reversed<span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>,  <span class="kw3">port3</span>,           leftMotor,     <span class="kw3">tmotorNormal</span>, openLoop<span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;  <span class="co1">// Robot waits for 2000 milliseconds before executing program</span>
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">(</span>touchSensor<span class="br0">)</span> == <span class="nu0">0</span><span class="br0">)</span>  <span class="co1">// Loop while robot's bumper/touch sensor isn't pressed in</span>
+  <span class="br0">{</span>
+    <span class="kw2">motor</span><span class="br0">[</span>rightMotor<span class="br0">]</span> = <span class="nu0">63</span>;	 <span class="co1">// Motor on port2 is run at half (63) power forward</span>
+    <span class="kw2">motor</span><span class="br0">[</span>leftMotor<span class="br0">]</span>  = <span class="nu0">63</span>;	 <span class="co1">// Motor on port3 is run at half (63) power forward</span>
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Sonar">Sonar</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_sonar_sensor.png" class="image"><img alt="Vex sonar sensor.png" src="./Vex Sensors_files/Vex_sonar_sensor.png" width="296" height="296"></a>
+<br>
+Returns an analog value in centimeters (i.e. a value of 20 means 20 centimeters away), millimeters, inches, or raw data. A value of "-1" means the sensor does not receive a "reflection". The sonar sensor requires the "Input" wire to be attached the digital port directly following the main port of the Sonar Sensor (i.e. dgtl4 and dgtl5, ROBOTC will automatically fill the following port with the correct information).
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">dgtl8</span>,  sonarSensor,         sensorSONAR_cm<span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>,  <span class="kw3">port2</span>,           rightMotor,    <span class="kw3">tmotorNormal</span>, openLoop, reversed<span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>,  <span class="kw3">port3</span>,           leftMotor,     <span class="kw3">tmotorNormal</span>, openLoop<span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;  <span class="co1">// Robot waits for 2000 milliseconds before executing program</span>
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">(</span>sonarSensor<span class="br0">)</span> &gt; <span class="nu0">20</span>  || <span class="kw2">SensorValue</span><span class="br0">(</span>sonarSensor<span class="br0">)</span> == <span class="nu0">-1</span><span class="br0">)</span>  <span class="co1">// Loop while robot's Ultrasonic sensor is further than 20 cm away from an object</span>
+  <span class="br0">{</span>                                                                        <span class="co1">// || (or) it is '-1'.  (-1 is the value returned when nothing is in it's visable range)</span>
+    <span class="kw2">motor</span><span class="br0">[</span>rightMotor<span class="br0">]</span> = <span class="nu0">63</span>;  <span class="co1">// Motor on port2 is run at half (63) power forward</span>
+    <span class="kw2">motor</span><span class="br0">[</span>leftMotor<span class="br0">]</span>  = <span class="nu0">63</span>;  <span class="co1">// Motor on port3 is run at half (63) power forward</span>
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Quadrature_Encoder">Quadrature Encoder</span></h3>
+<p><a href="http://www.robotc.net/wikiarchive/File:Vex_quad_enc.png" class="image"><img alt="Vex quad enc.png" src="./Vex Sensors_files/Vex_quad_enc.png" width="258" height="152"></a>
+<br>
+A digital sensor that returns a counter value keeping track of how many "counts" the encoder has seen. This sensor will increment when traveling in the forward of direction and decrement when traveling in the reverse direction.The Quadrature Encoder requires one of the input wires be attached the interrupt port "int3" through "int6" to function properly.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">dgtl1</span>,  rightEncoder,        <span class="kw3">sensorQuadEncoder</span><span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">dgtl3</span>,  leftEncoder,         <span class="kw3">sensorQuadEncoder</span><span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>,  <span class="kw3">port2</span>,           rightMotor,    <span class="kw3">tmotorNormal</span>, openLoop, reversed<span class="br0">)</span>
+<span class="kw1">#pragma</span> config<span class="br0">(</span><span class="kw2">Motor</span>,  <span class="kw3">port3</span>,           leftMotor,     <span class="kw3">tmotorNormal</span>, openLoop<span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw2">wait1Msec</span><span class="br0">(</span><span class="nu0">2000</span><span class="br0">)</span>;  <span class="co1">// 2 Second Delay</span>
+&nbsp;
+  <span class="co1">//Clear Encoders</span>
+  <span class="kw2">SensorValue</span><span class="br0">[</span>rightEncoder<span class="br0">]</span> = <span class="nu0">0</span>;
+  <span class="kw2">SensorValue</span><span class="br0">[</span>leftEncoder<span class="br0">]</span> = <span class="nu0">0</span>;
+&nbsp;
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw2">SensorValue</span><span class="br0">[</span>leftEncoder<span class="br0">]</span> &lt; <span class="nu0">1800</span><span class="br0">)</span>  <span class="co1">// While less than 5 rotations on the leftEncoder...</span>
+  <span class="br0">{</span>
+    <span class="co1">//...Move Forward</span>
+    <span class="kw2">motor</span><span class="br0">[</span>rightMotor<span class="br0">]</span> = <span class="nu0">63</span>;
+    <span class="kw2">motor</span><span class="br0">[</span>leftMotor<span class="br0">]</span> = <span class="nu0">63</span>;
+  <span class="br0">}</span>
+&nbsp;
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Digital_In">Digital In</span></h3>
+<p>This will make the sensor port act as just a digital input, very similar to a touch sensor.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="co1">// No sample code here yet!  Somebody supply some!</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+<tr>
+<td>
+<h3><span class="mw-headline" id="Digital_Out">Digital Out</span></h3>
+<p>This will cause the sensor port to send out a digital high ("1") signal. Useful for using the controller to power 5V devices.
+<br>
+</p>
+<table>
+
+<tbody><tr>
+<td>
+<div dir="ltr" class="mw-geshi" style="text-align: left;"><pre class="source-robotc"><span class="kw1">#pragma</span> config<span class="br0">(</span>Sensor, <span class="kw3">dgtl7</span>,  solenoid,            <span class="kw3">sensorDigitalOut</span><span class="br0">)</span>
+<span class="co1">//*!!Code automatically generated by 'ROBOTC' configuration wizard              &nbsp;!!*//</span>
+&nbsp;
+<span class="kw1">task</span> <span class="kw1">main</span><span class="br0">(</span><span class="br0">)</span>
+<span class="br0">{</span>
+  <span class="kw1">while</span><span class="br0">(</span><span class="kw1">true</span><span class="br0">)</span>                     <span class="co1">// Loop Forever</span>
+  <span class="br0">{</span>
+    <span class="kw1">if</span><span class="br0">(</span><span class="kw2">vexRT</span><span class="br0">[</span><span class="kw3">Btn6U</span><span class="br0">]</span> == <span class="nu0">1</span><span class="br0">)</span>         <span class="co1">// If button 6U (upper right shoulder button) is pressed:</span>
+    <span class="br0">{</span>
+      <span class="kw2">SensorValue</span><span class="br0">[</span>solenoid<span class="br0">]</span> = <span class="nu0">1</span>;  <span class="co1">// ...activate the solenoid.</span>
+    <span class="br0">}</span>
+    <span class="kw1">else</span>                          <span class="co1">// If button 6U (upper right shoulder button) is  NOT pressed:</span>
+    <span class="br0">{</span>
+      <span class="kw2">SensorValue</span><span class="br0">[</span>solenoid<span class="br0">]</span> = <span class="nu0">0</span>;  <span class="co1">// ..deactivate the solenoid.</span>
+    <span class="br0">}</span>
+  <span class="br0">}</span>
+<span class="br0">}</span></pre></div>
+</td></tr>
+</tbody></table>
+</td></tr>
+</tbody></table>
+<p><br>
+</p>
+<!-- 
+NewPP limit report
+CPU time usage: 0.356 seconds
+Real time usage: 1.272 seconds
+Preprocessor visited node count: 178/1000000
+Preprocessor generated node count: 402/1000000
+Post‐expand include size: 1849/2097152 bytes
+Template argument size: 2/2097152 bytes
+Highest expansion depth: 3/40
+Expensive parser function count: 0/100
+-->
+</div>								<div class="printfooter">
+				Retrieved from "<a href="http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;oldid=5448">http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;oldid=5448</a>"				</div>
+												<div id="catlinks" class="catlinks catlinks-allhidden"></div>												<div class="visualClear"></div>
+							</div>
+		</div>
+		<div id="mw-navigation">
+			<h2>Navigation menu</h2>
+			<div id="mw-head">
+				<div id="p-personal" role="navigation" class="" aria-labelledby="p-personal-label">
+	<h3 id="p-personal-label">Personal tools</h3>
+	<ul>
+<li id="pt-login"><a href="http://www.robotc.net/w/index.php?title=Special:UserLogin&amp;returnto=VEX2+Sensors+Overview" title="You are encouraged to log in; however, it is not mandatory [alt-shift-o]" accesskey="o">Log in</a></li>	</ul>
+</div>
+				<div id="left-navigation">
+					<div id="p-namespaces" role="navigation" class="vectorTabs" aria-labelledby="p-namespaces-label">
+	<h3 id="p-namespaces-label">Namespaces</h3>
+	<ul>
+					<li id="ca-nstab-main" class="selected"><span><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview" title="View the content page [alt-shift-c]" accesskey="c">Page</a></span></li>
+					<li id="ca-talk" class="new"><span><a href="http://www.robotc.net/w/index.php?title=Talk:VEX2_Sensors_Overview&amp;action=edit&amp;redlink=1" title="Discussion about the content page [alt-shift-t]" accesskey="t">Discussion</a></span></li>
+			</ul>
+</div>
+<div id="p-variants" role="navigation" class="vectorMenu emptyPortlet" aria-labelledby="p-variants-label">
+	<h3 id="mw-vector-current-variant">
+		</h3>
+	<h3 id="p-variants-label" tabindex="0"><span>Variants</span><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#" tabindex="-1"></a></h3>
+	<div class="menu">
+		<ul>
+					</ul>
+	</div>
+</div>
+				</div>
+				<div id="right-navigation">
+					<div id="p-views" role="navigation" class="vectorTabs" aria-labelledby="p-views-label">
+	<h3 id="p-views-label">Views</h3>
+	<ul>
+					<li id="ca-view" class="selected"><span><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview">Read</a></span></li>
+					<li id="ca-viewsource"><span><a href="http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;action=edit" title="This page is protected.
+You can view its source [alt-shift-e]" accesskey="e">View source</a></span></li>
+					<li id="ca-history" class="collapsible"><span><a href="http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;action=history" title="Past revisions of this page [alt-shift-h]" accesskey="h">View history</a></span></li>
+			</ul>
+</div>
+<div id="p-cactions" role="navigation" class="vectorMenu emptyPortlet" aria-labelledby="p-cactions-label">
+	<h3 id="p-cactions-label" tabindex="0"><span>Actions</span><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#" tabindex="-1"></a></h3>
+	<div class="menu">
+		<ul>
+					</ul>
+	</div>
+</div>
+<div id="p-search" role="search">
+	<h3><label for="searchInput">Search</label></h3>
+	<form action="http://www.robotc.net/w/index.php" id="searchform">
+				<div id="simpleSearch">
+						<input name="search" placeholder="Search" title="Search ROBOTC API Guide [alt-shift-f]" accesskey="f" id="searchInput" tabindex="4" autocomplete="off">						<button type="submit" name="button" title="Search the pages for this text" id="searchButton"><img src="./Vex Sensors_files/search-ltr.png" alt="Search" width="12" height="13"></button>								<input type="hidden" name="title" value="Special:Search">
+		</div>
+	</form>
+</div>
+				</div>
+			</div>
+			<div id="mw-panel" class="collapsible-nav">
+					<div id="p-logo" role="banner"><a style="background-image: url(/w/skins/common/images/wiki.png);" href="http://www.robotc.net/wikiarchive/Main_Page" title="Visit the main page"></a></div>
+				<div class="portal first persistent" role="navigation" id="p-navigation" aria-labelledby="p-navigation-label">
+	<h3 id="p-navigation-label">Navigation</h3>
+	<div class="body">
+		<ul>
+			<li id="n-mainpage-description"><a href="http://www.robotc.net/wikiarchive/Main_Page" title="Visit the main page [alt-shift-z]" accesskey="z">Main page</a></li>
+			<li id="n-ARDUINO"><a href="http://www.robotc.net/wikiarchive/ARDUINO">ARDUINO</a></li>
+			<li id="n-CORTEX"><a href="http://www.robotc.net/wikiarchive/VEX2">CORTEX</a></li>
+			<li id="n-NXT"><a href="http://www.robotc.net/wikiarchive/NXT">NXT</a></li>
+			<li id="n-PIC"><a href="http://www.robotc.net/wikiarchive/VEX">PIC</a></li>
+			<li id="n-TETRIX"><a href="http://www.robotc.net/wikiarchive/TETRIX">TETRIX</a></li>
+			<li id="n-Tutorials"><a href="http://www.robotc.net/wikiarchive/Tutorials">Tutorials</a></li>
+			<li id="n-General-Programming"><a href="http://www.robotc.net/wikiarchive/General">General Programming</a></li>
+		</ul>
+	</div>
+</div>
+<div class="portal expanded" role="navigation" id="p-" aria-labelledby="p--label">
+	<h3 id="p--label" tabindex="2"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#"></a></h3>
+	<div class="body" style="display: block;">
+		<ul>
+			<li id="n-recentchanges"><a href="http://www.robotc.net/wikiarchive/Special:RecentChanges" title="A list of recent changes in the wiki [alt-shift-r]" accesskey="r">Recent changes</a></li>
+			<li id="n-help"><a href="http://www.robotc.net/wikiarchive/Help:Contents" title="The place to find out">Help</a></li>
+		</ul>
+	</div>
+</div>
+<div class="portal collapsed" role="navigation" id="p-tb" aria-labelledby="p-tb-label">
+	<h3 id="p-tb-label" tabindex="3"><a href="http://www.robotc.net/wikiarchive/VEX2_Sensors_Overview#">Tools</a></h3>
+	<div class="body">
+		<ul>
+			<li id="t-whatlinkshere"><a href="http://www.robotc.net/wikiarchive/Special:WhatLinksHere/VEX2_Sensors_Overview" title="A list of all wiki pages that link here [alt-shift-j]" accesskey="j">What links here</a></li>
+			<li id="t-recentchangeslinked"><a href="http://www.robotc.net/wikiarchive/Special:RecentChangesLinked/VEX2_Sensors_Overview" title="Recent changes in pages linked from this page [alt-shift-k]" accesskey="k">Related changes</a></li>
+			<li id="t-specialpages"><a href="http://www.robotc.net/wikiarchive/Special:SpecialPages" title="A list of all special pages [alt-shift-q]" accesskey="q">Special pages</a></li>
+			<li id="t-print"><a href="http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;printable=yes" rel="alternate" title="Printable version of this page [alt-shift-p]" accesskey="p">Printable version</a></li>
+			<li id="t-permalink"><a href="http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;oldid=5448" title="Permanent link to this revision of the page">Permanent link</a></li>
+			<li id="t-info"><a href="http://www.robotc.net/w/index.php?title=VEX2_Sensors_Overview&amp;action=info">Page information</a></li>
+		</ul>
+	</div>
+</div>
+			</div>
+		</div>
+		<div id="footer" role="contentinfo">
+							<ul id="footer-info">
+											<li id="footer-info-lastmod"> This page was last modified on 25 July 2012, at 15:28.</li>
+											<li id="footer-info-viewcount">This page has been accessed 20,398 times.</li>
+									</ul>
+							<ul id="footer-places">
+											<li id="footer-places-privacy"><a href="http://www.robotc.net/wikiarchive/ROBOTC_API_Guide:Privacy_policy" title="ROBOTC API Guide:Privacy policy">Privacy policy</a></li>
+											<li id="footer-places-about"><a href="http://www.robotc.net/wikiarchive/ROBOTC_API_Guide:About" title="ROBOTC API Guide:About">About ROBOTC API Guide</a></li>
+											<li id="footer-places-disclaimer"><a href="http://www.robotc.net/wikiarchive/ROBOTC_API_Guide:General_disclaimer" title="ROBOTC API Guide:General disclaimer">Disclaimers</a></li>
+									</ul>
+										<ul id="footer-icons" class="noprint">
+					<li id="footer-poweredbyico">
+						<a href="http://www.mediawiki.org/"><img src="./Vex Sensors_files/poweredby_mediawiki_88x31.png" alt="Powered by MediaWiki" width="88" height="31"></a>
+					</li>
+				</ul>
+						<div style="clear:both"></div>
+		</div>
+		<script>/*<![CDATA[*/window.jQuery && jQuery.ready();/*]]>*/</script><script>if(window.mw){
+mw.loader.state({"site":"loading","user":"ready","user.groups":"ready"});
+}</script>
+<script>if(window.mw){
+mw.loader.load(["mediawiki.action.view.postEdit","mediawiki.user","mediawiki.hidpi","mediawiki.page.ready","mediawiki.searchSuggest","ext.vector.collapsibleNav","ext.vector.editWarning","ext.vector.simpleSearch","skins.vector.collapsibleNav"],null,true);
+}</script>
+<script src="./Vex Sensors_files/index.php"></script>
+<script src="./Vex Sensors_files/load(7).php"></script>
+<script src="./Vex Sensors_files/saved_resource"></script><!-- Served in 1.736 secs. -->
+	
+
+<div class="suggestions" style="display: none; font-size: 13px;"><div class="suggestions-results"></div><div class="suggestions-special"></div></div></body></html>
