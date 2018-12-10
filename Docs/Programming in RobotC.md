@@ -983,6 +983,10 @@ Note: You can have two controllers. In this case, append the name of the channel
 | Digital In         | Digital |               |                                          |
 | Digital Out        | Digital | 0 or 1        | 1 sends digital signal. Use for solenoids. |
 
+### Integrated Motor Encoders
+
+These use the `I2C` protocol, and multiple devices can be daisy-chained together. Plug the 4 wire cable into the encoder and plug it into the Cortex's `I2C` port. After enabling Super User mode on RobotC (Window->Menu Level->Super User), go to Motor and Sensor setup, and for the motor the encoder is attached to, Encoder Port->I2C->I2C_1 (or whatever number you want). Then, on the I2C Sensors tab, name the encoder and select Quadrature Encoder (I2C) as the sensor type. View the functions in the sidebar (Motors->Integrated Encoders).
+
 
 
 ## RobotC 4.0 Math functions
@@ -1009,7 +1013,7 @@ Note: You can have two controllers. In this case, append the name of the channel
 
 ## `printF` function
 
-The `printf` function allows you to print text to the console. You can print variables, and those require you to specify what type of variable it is. To do this, you enter a `%` before the variable, and there are many options for formatting.
+The `printf` function allows you to print text to the console. You can print variables, and those require you to specify what type of variable it is. To do this, you enter a `%` before the variable, and there are many options for formatting. However, it may be wise to instead use `writeDebugStreamLine` and open the debug stream console (Window->Menu Level->Super User, Robot->Debugger Windows->Debug Stream). It takes the same arguments as `printf`
 
 The string must be between double quotes `""`, and after that, you enter the variables as arguments for the function.
 
