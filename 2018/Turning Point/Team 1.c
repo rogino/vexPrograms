@@ -16,8 +16,9 @@ To reduce the maximum current for each circuit breaker (ports 1-5, 6-10, power e
 
 Port 10 is unusable in the Cortex due to previous use, and as 10 motors are needed, a Y-cable is instead used.
 
-// http://markdowntable.com/
+http://markdowntable.com/
 
+For motor naming, look at the robot from above with the cap flipper pointing upwards
 
 | Port | Motor Description                    | Name     | Slave Motor    | Power Expander | IME          | Gearing | Reversed |
 |------|--------------------------------------|----------|----------------|----------------|--------------|---------|----------|
@@ -30,6 +31,27 @@ Port 10 is unusable in the Cortex due to previous use, and as 10 motors are need
 | 7    | Front Left Drive                     | driveFL  | Yes - driveMBL | No             | No           | Torque  | No       |
 | 8    | Front Right Drive                    | driveFR  | Yes - driveMR  | No             | No           | Torque  | Yes      |
 | 9    | Arm Left                             | armL     | Master         | No             | Yes          | Unknown | Yes      |
+
+
+## Controls
+### Drive
+8U: Switch between tank and arcade drive
+During tank drive: left, right joysticks' vertical axis used (Ch3, Ch2)
+During arcade drive: left joystick's vertical and right joystick's horizontal (Ch3, Ch1)
+
+### Arm
+5D, 5U: lower/raise arm
+5U + 5D: arm goes up slowly
+7R enables PID
+
+### Intake
+6D, 6U: D intakes, U reverses
+
+### Claw
+8D triggers pneumatics
+
+### Launcher
+7D draws it back
 
 */
 
@@ -50,14 +72,33 @@ Port 10 is unusable in the Cortex due to previous use, and as 10 motors are need
 #include "Vex_Competition_Includes.c"
 
 
+// ## Global Variables
+// ### System
+const int mainLoopDelay = 10;
+
+// ### Drive
 bool driveIsTank = true;
 bool driveWasPressed = false;
 
-bool autoWasPressed = false;
+// ### Intake
+const int intakeSpeed = 100;
 
+// ### Claw
+bool clawWasPressed = false;
+
+// ### Arm
 const int armSpeed = 127;
 const int armSlowSpeed = 50;
+// #### Arm PID
+long armError = 0;
+long armIntegral = 0;
+const long armMaxValue = 30000; // MAX: YOU MAY NEED TO MODIFY THIS
+
+
+// ## Launcher
 const int launcherSpeed = 100;
+
+
 
 const float countsPerMotorRotation = 627.2; // Number of counts for one rotation of the motor (High strength)
 const float distancePerWheelRotation = 2 * PI * 4 * 0.0254; //0.0254 to convert inches to meters
@@ -67,18 +108,6 @@ float distanceToDriveTicks(float distance) {
 }
 
 
-const int intakeSpeed = 100;
-
-
-const int armLowPostPosition = 700;
-const int integralArmMax = 20000;
-float integralArm = 0;
-int prevArmError = 0;
-
-
-
-
-bool clawWasPressed = false;
 
 
 
@@ -87,20 +116,17 @@ void pre_auton()
   // Set bStopTasksBetweenModes to false if you want to keep user created tasks
   // running between Autonomous and Driver controlled modes. You will need to
   // manage all user created tasks if set to false.
-  bStopTasksBetweenModes = true;
-  slaveMotor(armR, armL);
+	bStopTasksBetweenModes = true;
+	slaveMotor(armR, armL);
 
-  slaveMotor(driveBR, driveMR);
-  slaveMotor(driveFR, driveMR);
+	slaveMotor(driveBR, driveMR);
+	slaveMotor(driveFR, driveMR);
 
-  slaveMotor(driveFL, driveMBL);
-  // nMotorEncoder[armL] = 0;
+	slaveMotor(driveFL, driveMBL);
+    
+    nMotorEncoder[armL] = 0; // Set the motor encoder to zero at startup as it should start in the same position for every match.
 
-/*
-  while (true) {
-		SensorValue[claw] = !SensorValue[claw];
-		wait1Msec(1000);
-	}*/
+
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -112,8 +138,8 @@ void pre_auton()
 
 
 void drive(int l, int r) {
-		motor[driveMBL] = l;
-		motor[driveMR] = r;
+	motor[driveMBL] = l;
+	motor[driveMR] = r;
 }
 
 
@@ -121,6 +147,109 @@ void arm(int speed) {
 	motor[armL] = speed;
 }
 
+long getArmIMEValue() {
+	return nMotorEncoder(port9);
+}
+
+
+
+void armPID(int target, long currentArmIMEValue, bool reset) {
+	// MAX: YOU WILL NEED TO TWEAK THESE THREE VARIABLES
+	const float kP = 0.7;
+	const float kI = 0.01;
+	const float kD = 0.1;
+
+	if (reset) armError = armIntegral = 0;
+
+	long error = currentArmIMEValue - target;
+	
+	armIntegral += error;
+
+	if (armIntegral > armMaxValue) armIntegral = armMaxValue;
+
+	int armDerivative = error - armError;
+	armError = error; // Update error
+
+	int power = armError * kP + armIntegral * kI + armDerivative * kD;
+
+	writeDebugStreamLine("Motor: %d Sensor: %d Error: %d dt: %d Integral %d", power, error + target, error, armDerivative, armIntegral);
+
+	arm(power);
+}
+
+
+void auto() {
+	motor[launcher] = launcherSpeed;
+	wait1Msec(3500);
+	motor[launcher] = 0;
+
+}
+
+task autonomous()
+{
+  // ..........................................................................
+  // Insert user code here.
+  // ..........................................................................
+
+  // Remove this function call once you have "real" code.
+	auto();
+}
+
+
+
+
+bool armPIDFirstTimePressed = true;
+long armTarget = 0;
+
+task usercontrol()
+{
+	// auto();
+  	// User control code here, inside the loop
+	while (true)
+	{
+		wait1Msec(mainLoopDelay);
+
+		if (vexRT[Btn8U] && !driveWasPressed) {
+			driveIsTank = !driveIsTank;
+			driveWasPressed = true;
+		} 
+		else driveWasPressed = false;
+
+
+		if (driveIsTank) drive(vexRT[Ch3], vexRT[Ch2]);
+		else drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]);
+
+
+		if (vexRT[Btn7R]) {
+			if (armPIDFirstTimePressed) armTarget = getArmIMEValue();
+			armPID(armTarget, getArmIMEValue(), armPIDFirstTimePressed); // Target, actual value, reset if it is the first time at this position
+			armPIDFirstTimePressed = false;
+
+		} else { // Manual control
+			armPIDFirstTimePressed = true; // Reset value
+
+			if (vexRT[Btn5D] && vexRT[Btn5U]) arm(armSlowSpeed); //If both buttons pressed go up slowly
+			else if (vexRT[Btn5D]) arm(-armSpeed);
+			else if (vexRT[Btn5U]) arm(armSpeed);
+			else arm(0);		
+		}
+	
+
+		motor[intake] = (vexRT[Btn6U] - vexRT[Btn6D]) * intakeSpeed; // Negative sucks it in
+
+
+		if (vexRT[Btn8U] && !clawWasPressed) {
+			SensorValue[claw] = !SensorValue[claw];
+			clawWasPressed = true;
+		}
+		else if (!vexRT[Btn8D]) clawWasPressed = false;
+
+  	motor[launcher] = vexRT[Btn7D] * launcherSpeed; // Positive draws it back
+  }
+}
+
+
+/* Code I don't want to entirely remove yet
 void armPID(int target, bool reset) {
 
 	const float kP = 0.7;
@@ -147,32 +276,8 @@ void armPID(int target, bool reset) {
 }
 
 
-float integralDriveL = 0;
-float integralDriveR = 0;
-int prevDriveErrorL = 0;
-int prevDriveErrorR = 0;
-
-/*
-int driveForwardsPID(int target, bool reset) {
-	if (reset) {
-			integralDriveL = integralDriveR = 0;
-			prevDriveErrorL = prevDriveErrorR = 0;
-	}
-
-
-  // How will I implement this for both sides?
-	return 0;
-}
-
-*/
-
-
-
-void auto() {
-	motor[launcher] = launcherSpeed;
-	wait1Msec(3500);
-	motor[launcher] = 0;
-	/*drive(-80, -100);
+// AUTONOMOUS ROUTINE
+	drive(-80, -100);
 	wait1Msec(3500);
 	drive(0, 0);
 	wait1Msec(300);
@@ -180,76 +285,6 @@ void auto() {
 	wait1Msec(300);
 	drive(0,0);
 
-	*/
-}
-
-task autonomous()
-{
-  // ..........................................................................
-  // Insert user code here.
-  // ..........................................................................
-
-  // Remove this function call once you have "real" code.
-	auto();
-}
 
 
-
-
-task usercontrol()
-{
-	// auto();
-  // User control code here, inside the loop
-  while (true)
-  {
-  	wait1Msec(10);
-
-  	if (vexRT[Btn8D] && !driveWasPressed) {
-				driveIsTank = !driveIsTank;
-				driveWasPressed = true;
-  	}
-
-  	else {
-  		driveWasPressed = false;
-  	}
-
-  	if (driveIsTank) {
-  		drive(vexRT[Ch3], vexRT[Ch2]);
-  	}
-  	else {
-  		drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]);
-  	}
-
-/*
-  	if (vexRT[Btn7U]) {
-  		armPID(armLowPostPosition, autoWasPressed);
-  		autoWasPressed = true;
-  	}
-  	else {
-  		autoWasPressed = false;
 */
-	  	if (vexRT[Btn5D] && vexRT[Btn5U]) {
-	  		arm(armSlowSpeed); //If both buttons pressed go up slowly
-	  	}	else if (vexRT[Btn5D]) {
-	  		arm(-armSpeed);
-	  	} else if (vexRT[Btn5U]) {
-	  		arm(armSpeed);
-	  	} else {
-	  		arm(0);
-	  	}
-
-
-		motor[intake] = (vexRT[Btn6U] - vexRT[Btn6D]) * intakeSpeed; // Negative sucks it in
-
-  	/*}*/
-
-  	if (vexRT[Btn8U] && !clawWasPressed) {
-  		SensorValue[claw] = !SensorValue[claw];
-  		clawWasPressed = true;
-  	} else if (!vexRT[Btn8U]) {
-  		clawWasPressed = false;
-  	}
-
-  	motor[launcher] = (vexRT[Btn7D] - vexRT[Btn7U]) * launcherSpeed; // Positive draws it back
-	}
-}
