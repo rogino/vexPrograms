@@ -1,3 +1,4 @@
+
 #pragma config(Sensor, dgtl12, claw,           sensorDigitalOut)
 #pragma config(Sensor, I2C_1,  armIME,         sensorNone)
 #pragma config(Motor,  port1,           driveMR,       tmotorVex393_HBridge, openLoop, reversed)
@@ -14,7 +15,7 @@
 /*
 To reduce the maximum current for each circuit breaker (ports 1-5, 6-10, power expander), we have tried to spread the load equally. Thus, each breaker only has two drive motors as they will be used extensively, and the load for the arm is spread out across two breaker.
 
-Port 10 is unusable in the Cortex due to previous use, and as 10 motors are needed, a Y-cable is instead used.
+Port 10 is unusable in the Cortex due to previous events, and as 10 motors are needed, a Y-cable is instead used.
 
 http://markdowntable.com/
 
@@ -93,6 +94,8 @@ const int armSlowSpeed = 50;
 long armError = 0;
 long armIntegral = 0;
 const long armMaxValue = 30000; // MAX: YOU MAY NEED TO MODIFY THIS
+bool armPIDFirstTimePressed = true;
+long armTarget = 0;
 
 
 // ## Launcher
@@ -163,7 +166,6 @@ void armPID(int target, long currentArmIMEValue, bool reset) {
 
 	long error = currentArmIMEValue - target;
 	
-	armIntegral += error;
 
 	if (armIntegral > armMaxValue) armIntegral = armMaxValue;
 
@@ -198,8 +200,6 @@ task autonomous()
 
 
 
-bool armPIDFirstTimePressed = true;
-long armTarget = 0;
 
 task usercontrol()
 {
@@ -208,6 +208,11 @@ task usercontrol()
 	while (true)
 	{
 		wait1Msec(mainLoopDelay);
+
+		// WriteDebugStreamLine("IME Value: %d", getArmIMEValue());
+
+		// armPID(1000, getArmIMEValue(), false); // Change the value of the number
+
 
 		if (vexRT[Btn8U] && !driveWasPressed) {
 			driveIsTank = !driveIsTank;
@@ -221,8 +226,9 @@ task usercontrol()
 
 
 		if (vexRT[Btn7R]) {
-			if (armPIDFirstTimePressed) armTarget = getArmIMEValue();
-			armPID(armTarget, getArmIMEValue(), armPIDFirstTimePressed); // Target, actual value, reset if it is the first time at this position
+			long currentIME = getArmIMEValue();
+			if (armPIDFirstTimePressed) armTarget = currentIME;
+			armPID(armTarget, currentIME, armPIDFirstTimePressed); // Target, actual value, reset if it is the first time at this position
 			armPIDFirstTimePressed = false;
 
 		} else { // Manual control
