@@ -60,7 +60,7 @@ const short btnDrawLauncherBack = Btn7D;
 
 const short btnLowerArm = Btn5D;
 const short btnRaiseArm = Btn5U;
-const short btnEnableArmPID = Btn6D;
+const short btnToggleArmPID = Btn6D;
 
 const short btnSwitchDriveMode = Btn8U;
 
@@ -87,9 +87,10 @@ const int armSlowSpeed = 50;
 long armError = 0;
 long armIntegral = 0;
 const long armMaxValue = 30000; // MAX: YOU MAY NEED TO MODIFY THIS
-bool armPIDFirstTimePressed = true;
 long armTarget = 0;
 
+bool armPIDEnabled = false;
+bool armPIDFirstTimePressed = true;
 
 // ## Launcher
 const int launcherSpeed = 100;
@@ -215,21 +216,28 @@ task usercontrol()
 		else drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]);
 
 
-		if (vexRT[btnEnableArmPID]) {
-			long currentIME = getArmIMEValue();
-			if (armPIDFirstTimePressed) armTarget = currentIME;
-			armPID(armTarget, currentIME, armPIDFirstTimePressed); // Target, actual value, reset if it is the first time at this position
-			armPIDFirstTimePressed = false;
+		long armIMEValue = getArmIMEValue();
+		bool wasFirstTimePressed = armPIDFirstTimePressed; // Need this as will be set to false when armPID called
 
-		} else { // Manual control
-			armPIDFirstTimePressed = true; // Reset value
+		if (vexRT[btnToggleArmPID]) { // Press to toggle arm IME state
+			if (armPIDFirstTimePressed) {
+				// Setup
+				armPIDEnabled = !armPIDEnabled;
+				armTarget = armIMEValue;
+			}
+			armPIDFirstTimePressed = false; // Ensure setup only runs once
+		} else armPIDFirstTimePressed = true;
 
+
+		if (vexRT[btnRaiseArm] || vexRT[btnLowerArm]) armPIDEnabled = false; // If either of the arm buttons are pressed, disable PID
+
+		if (armPIDEnabled) armPID(armTarget, armIMEValue, wasFirstTimePressed);
+		else {
 			if (vexRT[btnRaiseArm] && vexRT[btnLowerArm]) arm(armSlowSpeed); //If both buttons pressed go up slowly
 			else if (vexRT[btnLowerArm]) arm(-armSpeed);
 			else if (vexRT[btnRaiseArm]) arm(armSpeed);
-			else arm(0);
+			else arm(0);			
 		}
-
 
 		motor[intake] = (vexRT[btnIntakeIn] - vexRT[btnIntakeOut]) * intakeSpeed;
 
