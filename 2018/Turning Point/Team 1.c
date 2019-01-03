@@ -47,29 +47,9 @@ For motor naming, look at the robot from above with the cap flipper pointing upw
 
 ## Controls
 ### Drive
-8U: Switch between tank and arcade drive
 During tank drive: left, right joysticks' vertical axis used (Ch3, Ch2)
 During arcade drive: left joystick's vertical and right joystick's horizontal (Ch3, Ch1)
-
-### Arm
-5D, 5U: lower/raise arm
-5U + 5D: arm goes up slowly
-7R enables PID
-
-### Intake
-6D, 6U: D intakes, U reverses
-
-### Claw
-8D triggers pneumatics
-
-### Launcher
-7D draws it back
-
 */
-
-
-
-
 
 
 // ## Global Variables
@@ -80,12 +60,12 @@ const short btnDrawLauncherBack = Btn7D;
 
 const short btnLowerArm = Btn5D;
 const short btnRaiseArm = Btn5U;
-const short btnEnableArmPID = Btn7R;
+const short btnEnableArmPID = Btn6D;
 
 const short btnSwitchDriveMode = Btn8U;
 
-const short btnIntakeIn = Btn6D;
-const short btnIntakeOut = Btn6U;
+const short btnIntakeIn = Btn6U;
+const short btnIntakeOut = Btn7R;
 
 // ### System
 const int mainLoopDelay = 10;
@@ -251,7 +231,7 @@ task usercontrol()
 		}
 
 
-		motor[intake] = (vexRT[btnIntakeOut] - vexRT[btnIntakeIn]) * intakeSpeed; // Negative sucks it in
+		motor[intake] = (vexRT[btnIntakeIn] - vexRT[btnIntakeOut]) * intakeSpeed;
 
 
 		if (vexRT[btnTriggerPneumatics] && !clawWasPressed) { // Only runs once after button pressed
