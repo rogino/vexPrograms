@@ -4,7 +4,7 @@
 #pragma config(Motor,  port1,           driveMR,       tmotorVex393_HBridge, openLoop, reversed)
 #pragma config(Motor,  port2,           driveBR,       tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port3,           armR,          tmotorVex393_MC29, openLoop)
-#pragma config(Motor,  port4,           intake,        tmotorVex393_MC29, openLoop)
+#pragma config(Motor,  port4,           intake,        tmotorVex393_MC29, openLoop, reversed)
 #pragma config(Motor,  port5,           driveMBL,      tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port6,           launcher,      tmotorVex393_MC29, openLoop)
 #pragma config(Motor,  port7,           driveFL,       tmotorVex393_MC29, openLoop)
@@ -37,7 +37,7 @@ For motor naming, look at the robot from above with the cap flipper pointing upw
 | 1    | Middle Right Drive                   | driveMR  | Master         | No             | Yes          | Torque  | Yes      |
 | 2    | Back Right Drive                     | driveBR  | Yes - driveMR  | No             | No           | Torque  | Yes      |
 | 3    | Arm Right                            | armR     | Yes - armL     | No             | No           | Unknown | No       |
-| 4    | Intake                               | intake   | No             | Yes - A        | No           | Unknown | No       |
+| 4    | Intake                               | intake   | No             | Yes - A        | No           | Unknown | Yes      |
 | 5    | Back and Middle Left Drive (Y-Cable) | driveMBL | Master         | Yes - B        | Yes (Middle) | Torque  | No       |
 | 6    | Launcher                             | launcher | No             | Yes - C        | No           | Unknown | No       |
 | 7    | Front Left Drive                     | driveFL  | Yes - driveMBL | No             | No           | Torque  | No       |
