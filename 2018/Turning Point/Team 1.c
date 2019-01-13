@@ -78,6 +78,36 @@ const short BTN_INTAKE_OUT = Btn7R;
 bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers autonomous. Needed when there is no field control.
 bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_ARM]; } // Raises arm slowly
 
+
+typedef struct {
+	bool previouslyPressed;
+	bool isTrue;
+} ToggleButton;
+// Change a state when a button is pressed
+
+// RobotC doesn't support functions returning structs... even though the official documentation has an example of this
+void initializeToggleButton(struct ToggleButton* toggleButton, bool defaultState) {
+	toggleButton->previouslyPressed = false; // Always starts with no press
+	toggleButton->isTrue = defaultState;
+}
+
+// Updates the state of a ToggleButton
+// Args. toggleButton: pointer to ToggleButton struct; buttonIsPressed: whether or not the button is pressed
+// Return. true if the state has been changed, false if not
+bool ToggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed) {
+	if (buttonIsPressed) {
+		toggleButton->previouslyPressed = false;
+		toggleButton->isTrue = !toggleButton->isTrue;
+		return true;
+	}
+	toggleButton->previouslyPressed = true;
+	return false;
+}
+
+
+
+
+
 // ## For PID
 const float COUNTS_PER_MOTOR_ROTATION[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
 enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above
@@ -86,8 +116,7 @@ enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the arr
 const int MAIN_LOOP_DELAY = 10;
 
 // ### Drive
-bool driveIsTank = true;
-bool driveWasPressed = false;
+struct ToggleButton driveIsTank;
 
 const float WHEEL_RADIUS_INCHES = 2;
 const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
@@ -190,6 +219,10 @@ void pre_auton()
   bLCDBacklight = true; // Turn on backlight
 
   startTask(BatteryVoltageLCD);
+
+  // Initialization of ToggleButton structs (needs to occur within a function)
+	initializeToggleButton(&driveIsTank, true); // default tank drive
+
 
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
@@ -336,13 +369,9 @@ task usercontrol()
 		// armPid(1000, nMotorEncoder(armL), false); // Change the value of the number
 
 		// ### Drive
-		if (vexRT[BTN_TOGGLE_DRIVE_MODE] && !driveWasPressed) {
-			driveIsTank = !driveIsTank;
-			driveWasPressed = true;
-		}
-		else driveWasPressed = false;
+		ToggleButtonSetter(&driveIsTank, vexRT[BTN_TOGGLE_DRIVE_MODE]);
 
-		if (driveIsTank) driveTank();
+		if (driveIsTank.isTrue) driveTank();
 		else driveArcade();
 
 
