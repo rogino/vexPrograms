@@ -206,9 +206,9 @@ task BatteryVoltageLCD() {
 
 void pre_auton()
 {
-  // Set bStopTasksBetweenModes to false if you want to keep user created tasks
-  // running between Autonomous and Driver controlled modes. You will need to
-  // manage all user created tasks if set to false.
+	// Set bStopTasksBetweenModes to false if you want to keep user created tasks
+	// running between Autonomous and Driver controlled modes. You will need to
+	// manage all user created tasks if set to false.
 	slaveMotor(driveFR, driveMR);
 	bStopTasksBetweenModes = true;
 	slaveMotor(armR, armL);
@@ -217,15 +217,15 @@ void pre_auton()
 
 	slaveMotor(driveFL, driveMBL);
 
-  resetMotorEncoder(armL); // Otherwise, this returns 0. Very fustrating
-  resetMotorEncoder(driveMBL);
-  resetMotorEncoder(armR);
+	resetMotorEncoder(armL); // Otherwise, this returns 0. Very fustrating
+	resetMotorEncoder(driveMBL);
+	resetMotorEncoder(armR);
 
-  bLCDBacklight = true; // Turn on backlight
+	bLCDBacklight = true; // Turn on backlight
 
-  startTask(BatteryVoltageLCD);
+	startTask(BatteryVoltageLCD);
 
-  // Initialization of ToggleButton structs (needs to occur within a function)
+	// Initialization of ToggleButton structs (needs to occur within a function)
 	initializeToggleButton(&driveIsTank, true); // default tank drive
 	initializeToggleButton(&armPidLockToggler, false); // Default values for Lock and Post Toggler doesn't actually matter-just want to know when the state changes
 	initializeToggleButton(&armPidPostToggler, false);
@@ -236,8 +236,8 @@ void pre_auton()
 	// to display your team name on the LCD in this function.
 	// bDisplayCompetitionStatusOnLcd = false;
 
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
+	// All activities that occur before the competition starts
+	// Example: clearing encoders, setting servo positions, ...
 
 }
 
@@ -346,7 +346,7 @@ task autonomous()
 task usercontrol()
 {
 	// auto();
-  	// setMotorTarget(armL, 500, 100, true);
+	// setMotorTarget(armL, 500, 100, true);
 
 	int maxSpeed = 40;
 	// int l = driveLPid(1, maxSpeed, true);
@@ -439,16 +439,16 @@ task usercontrol()
 
 
 
-    // ### Intake
+	    // ### Intake
 		motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
 
 		// ### Pneumatics
 		if (toggleButtonSetter(&ClawClosed, vexRT[BTN_TRIGGER_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
-		
+
 
 		// ### Launcher
-  	motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
-  }
+		motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
+	}
 }
 
 
