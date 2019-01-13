@@ -79,22 +79,26 @@ bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers a
 bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_ARM]; } // Raises arm slowly
 
 
+
+
+
 typedef struct {
 	bool previouslyPressed;
 	bool isTrue;
 } ToggleButton;
-// Change a state when a button is pressed
 
 // RobotC doesn't support functions returning structs... even though the official documentation has an example of this
-void initializeToggleButton(struct ToggleButton* toggleButton, bool defaultState) {
+void initializeToggleButton(struct ToggleButton* toggleButton, bool initialState) {
 	toggleButton->previouslyPressed = false; // Always starts with no press
-	toggleButton->isTrue = defaultState;
+	toggleButton->isTrue = initialState;
 }
+
+
 
 // Updates the state of a ToggleButton
 // Args. toggleButton: pointer to ToggleButton struct; buttonIsPressed: whether or not the button is pressed
 // Return. true if the state has been changed, false if not
-bool ToggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed) {
+bool toggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed) {
 	if (buttonIsPressed && !toggleButton->previouslyPressed) { // Check if pressed and wasn't previously pressed
 		toggleButton->previouslyPressed = true; // Now, have previously pressed it.
 		toggleButton->isTrue = !toggleButton->isTrue; // If so, toggle the value and return true
@@ -108,16 +112,16 @@ bool ToggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed)
 
 
 
+
 // ## For PID
 const float COUNTS_PER_MOTOR_ROTATION[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
-enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above
+enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above. Float not integral so can't use enum with custom values
 
 // ### System
 const int MAIN_LOOP_DELAY = 10;
 
 // ### Drive
 struct ToggleButton driveIsTank;
-struct ToggleButton armPidIsLocked;
 
 const float WHEEL_RADIUS_INCHES = 2;
 const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
@@ -128,21 +132,21 @@ const short DRIVE_MOTORS_GEARING = TORQUE; // Drive using torque motors. Declare
 bool driveLErrorPositive = false;
 long driveLError = 0;
 long driveLIntegral = 0;
-const long DRIVE_L_MAX_VALUE = 30000;
+const long DRIVE_L_MAX_INTEGRAL = 30000;
 long driveLTarget = 0;
 
 // #### Right
 bool driveRErrorPositive = false;
 long driveRError = 0;
 long driveRIntegral = 0;
-const long DRIVE_R_MAX_VALUE = 30000;
+const long DRIVE_R_MAX_INTEGRAL = 30000;
 long driveRTarget = 0;
 
 // ### Intake
 const int INTAKE_SPEED = 100;
 
 // ### Claw
-bool clawWasPressed = false;
+struct ToggleButton ClawClosed;
 
 // ### Arm
 const int ARM_SPEED = 127;
@@ -161,14 +165,14 @@ void resetArmImeZeroPoint() {
 enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
 enum armPidStateEnum armPidState = ARM_PID_DISABLED; // initial state
 
+struct ToggleButton armPidLockToggler;
+struct ToggleButton armPidPostToggler;
+
+
 long armError = 0;
 long armIntegral = 0;
-const long ARM_INTEGRAL_MAX_VALUE = 30000;
+const long ARM_MAX_INTEGRAL = 30000;
 long armTarget = 0;
-
-bool armPidLockFirstTimePressed = true; // Button toggling free/lock at current height
-bool armPidPostFirstTimePressed = true; // Button toggling going to low/high post
-
 
 
 // ## Launcher
@@ -223,6 +227,9 @@ void pre_auton()
 
   // Initialization of ToggleButton structs (needs to occur within a function)
 	initializeToggleButton(&driveIsTank, true); // default tank drive
+	initializeToggleButton(&armPidLockToggler, false); // Default values for Lock and Post Toggler doesn't actually matter-just want to know when the state changes
+	initializeToggleButton(&armPidPostToggler, false);
+	initializeToggleButton(&ClawClosed, false); // Same for claw
 
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
@@ -259,8 +266,8 @@ int armPid(int target, long currentArmImeValue, bool reset) {
 
 	armIntegral += error;
 
-	if (armIntegral > ARM_INTEGRAL_MAX_VALUE) armIntegral = ARM_INTEGRAL_MAX_VALUE;
-	else if (armIntegral < -ARM_INTEGRAL_MAX_VALUE) armIntegral = -ARM_INTEGRAL_MAX_VALUE;
+	if (armIntegral > ARM_MAX_INTEGRAL) armIntegral = ARM_MAX_INTEGRAL;
+	else if (armIntegral < -ARM_MAX_INTEGRAL) armIntegral = -ARM_MAX_INTEGRAL;
 
 	int armDerivative = error - armError;
 	armError = error; // Update error
@@ -301,8 +308,8 @@ int driveLPid(int distance, int maxSpeed, bool reset) {
 	driveLErrorPositive = currentDriveLImeValue > 0;
 
 
-	if (driveLIntegral > DRIVE_L_MAX_VALUE) driveLIntegral = DRIVE_L_MAX_VALUE;
-	else if (driveLIntegral < -DRIVE_L_MAX_VALUE) driveLIntegral = -DRIVE_L_MAX_VALUE;
+	if (driveLIntegral > DRIVE_L_MAX_INTEGRAL) driveLIntegral = DRIVE_L_MAX_INTEGRAL;
+	else if (driveLIntegral < -DRIVE_L_MAX_INTEGRAL) driveLIntegral = -DRIVE_L_MAX_INTEGRAL;
 
 	int driveLDerivative = error - driveLError;
 	driveLError = error; // Update error
@@ -369,7 +376,7 @@ task usercontrol()
 		// armPid(1000, nMotorEncoder(armL), false); // Change the value of the number
 
 		// ### Drive
-		ToggleButtonSetter(&driveIsTank, vexRT[BTN_TOGGLE_DRIVE_MODE]);
+		toggleButtonSetter(&driveIsTank, vexRT[BTN_TOGGLE_DRIVE_MODE]);
 		if (driveIsTank.isTrue) driveTank();
 		else driveArcade();
 
@@ -378,41 +385,44 @@ task usercontrol()
 		resetArmImeZeroPoint();
 
 		long armImeValue = nMotorEncoder(armL);
-		bool reset = false;
 
-		if (vexRT[BTN_TOGGLE_LOCK_ARM_PID]) { // Press to toggle arm IME state
-			if (armPidLockFirstTimePressed) {
-				// Setup
-				if (armPidState != ARM_PID_LOCKED) armPidState = ARM_PID_LOCKED; // Enable if not currently in lock
-				else armPidState = ARM_PID_DISABLED; // Disable if currently locked
 
-				armTarget = ARM_HIGH_POST_HEIGHT; // Set the new target
-				reset = true; // Must reset PID control since it was freshly pressed
+		bool initializePid = false;
+		if (toggleButtonSetter(&armPidLockToggler, vexRT[BTN_TOGGLE_LOCK_ARM_PID])) { // Runs if the value changes
+			if (armPidState == ARM_PID_LOCKED) armPidState = ARM_PID_DISABLED; // Disable PID if currently locked
+			else {
+				armPidState = ARM_PID_LOCKED; // If not locked, lock
+				initializePid = true;
+				armTarget = armImeValue;
 			}
-			armPidLockFirstTimePressed = false; // Ensure setup only runs once per button press
-		} else armPidLockFirstTimePressed = true; // If not pressed, the next time it is pressed the initialization will run
+		}
 
-		if (vexRT[BTN_TOGGLE_POST_ARM_PID]) {
-			if (armPidPostFirstTimePressed) {
-				if (armPidState == ARM_PID_LOW_POST) {
-					armPidState = ARM_PID_HIGH_POST; // If currently low, go to high
+		if (toggleButtonSetter(&armPidPostToggler, vexRT[BTN_TOGGLE_POST_ARM_PID])) {
+			switch(armPidState) {
+				case ARM_PID_LOW_POST: // If currently low, next state is high
+					armPidState = ARM_PID_HIGH_POST;
+					initializePid = true;
 					armTarget = ARM_HIGH_POST_HEIGHT;
-				}
-				else {
-					armPidState = ARM_PID_LOW_POST; // Otherwise, go to low
+					break;
+
+				case ARM_PID_HIGH_POST: // If currently high, disable
+					armPidState = ARM_PID_DISABLED;
+					break;
+
+				default:
+					armPidState = ARM_PID_LOW_POST;
+					initializePid = true;
 					armTarget = ARM_LOW_POST_HEIGHT;
-				}
-				reset = true;
+					break;
 			}
-			armPidPostFirstTimePressed = false;
-		} else armPidPostFirstTimePressed = true;
+		}
 
 
 		if (vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
 
 		int power;
 		if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
-			power = armPid(armTarget, armImeValue, reset);
+			power = armPid(armTarget, armImeValue, initializePid);
 		}
 		else {
 			if (btnComboRaiseArmSlowly()) power = ARM_SLOW_SPEED; //If both buttons pressed go up slowly
@@ -433,12 +443,35 @@ task usercontrol()
 		motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
 
 		// ### Pneumatics
-		if (vexRT[BTN_TRIGGER_PNEUMATICS] && !clawWasPressed) { // Only runs once after button pressed
-			SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
-		}
-		clawWasPressed = vexRT[BTN_TRIGGER_PNEUMATICS];
+		if (toggleButtonSetter(&ClawClosed, vexRT[BTN_TRIGGER_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
+		
 
 		// ### Launcher
   	motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
   }
+}
+
+
+
+
+// Multistate toggler
+typedef struct {
+	bool previouslyPressed;
+	ubyte state;
+	ubyte numStates;
+} NToggleButton;
+
+void initializeNToggleButton(struct NToggleButton* nToggleButton, ubyte initialState, ubyte numStates) {
+	nToggleButton->previouslyPressed = false;
+	nToggleButton->state = initialState;
+	nToggleButton->numStates = numStates;
+}
+bool NToggleButtonSetter(struct NToggleButton* nToggleButton, bool buttonIsPressed) {
+	if (buttonIsPressed && !nToggleButton->previouslyPressed) {
+		nToggleButton->previouslyPressed = true;
+		nToggleButton->state = (nToggleButton->state + 1) % nToggleButton->numStates;
+		return true;
+	}
+	nToggleButton->previouslyPressed = buttonIsPressed;
+	return false;
 }
