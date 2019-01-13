@@ -95,13 +95,13 @@ void initializeToggleButton(struct ToggleButton* toggleButton, bool defaultState
 // Args. toggleButton: pointer to ToggleButton struct; buttonIsPressed: whether or not the button is pressed
 // Return. true if the state has been changed, false if not
 bool ToggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed) {
-	if (buttonIsPressed) {
-		toggleButton->previouslyPressed = false;
-		toggleButton->isTrue = !toggleButton->isTrue;
+	if (buttonIsPressed && !toggleButton->previouslyPressed) { // Check if pressed and wasn't previously pressed
+		toggleButton->previouslyPressed = true; // Now, have previously pressed it.
+		toggleButton->isTrue = !toggleButton->isTrue; // If so, toggle the value and return true
 		return true;
 	}
-	toggleButton->previouslyPressed = true;
-	return false;
+	toggleButton->previouslyPressed = buttonIsPressed; // If pressed, previously pressed is true. If not pressed, false. So just set to buttonIsPressed.
+	return false; // No change to value, so return false
 }
 
 
@@ -117,6 +117,7 @@ const int MAIN_LOOP_DELAY = 10;
 
 // ### Drive
 struct ToggleButton driveIsTank;
+struct ToggleButton armPidIsLocked;
 
 const float WHEEL_RADIUS_INCHES = 2;
 const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
@@ -204,11 +205,11 @@ void pre_auton()
   // Set bStopTasksBetweenModes to false if you want to keep user created tasks
   // running between Autonomous and Driver controlled modes. You will need to
   // manage all user created tasks if set to false.
+	slaveMotor(driveFR, driveMR);
 	bStopTasksBetweenModes = true;
 	slaveMotor(armR, armL);
 
 	slaveMotor(driveBR, driveMR);
-	slaveMotor(driveFR, driveMR);
 
 	slaveMotor(driveFL, driveMBL);
 
@@ -222,7 +223,6 @@ void pre_auton()
 
   // Initialization of ToggleButton structs (needs to occur within a function)
 	initializeToggleButton(&driveIsTank, true); // default tank drive
-
 
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
@@ -370,7 +370,6 @@ task usercontrol()
 
 		// ### Drive
 		ToggleButtonSetter(&driveIsTank, vexRT[BTN_TOGGLE_DRIVE_MODE]);
-
 		if (driveIsTank.isTrue) driveTank();
 		else driveArcade();
 
