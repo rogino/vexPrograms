@@ -59,89 +59,96 @@ During arcade drive: left joystick's vertical and right joystick's horizontal (C
 
 
 // ## Global Variables
-// ### Button Constants
+// ### Button Constants and related functions
 // This stops the button from being updated only in one place
-const short btnTriggerPneumatics = Btn8D;
-const short btnDrawLauncherBack = Btn7D;
+const short BTN_TRIGGER_PNEUMATICS = Btn8D;
+const short BTN_DRAW_LAUNCHER_BACK = Btn7D;
 
-const short btnLowerArm = Btn5D;
-const short btnRaiseArm = Btn5U;
-// NB: btnLowerArm and btnRaiseArm at the same time causes it to rise slowly
-const short btnToggleLockArmPid = Btn6D;
-const short btnTogglePostArmPid = Btn8L;
+const short BTN_LOWER_ARM = Btn5D;
+const short BTN_RAISE_ARM = Btn5U;
+// NB: BTN_LOWER_ARM and BTN_RAISE_ARM at the same time causes it to rise slowly
+const short BTN_TOGGLE_LOCK_ARM_PID = Btn6D;
+const short BTN_TOGGLE_POST_ARM_PID = Btn8L;
 
-const short btnSwitchDriveMode = Btn8U;
+const short BTN_TOGGLE_DRIVE_MODE = Btn8U;
 
-const short btnIntakeIn = Btn6U;
-const short btnIntakeOut = Btn7R;
+const short BTN_INTAKE_IN = Btn6U;
+const short BTN_INTAKE_OUT = Btn7R;
 
 bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers autonomous. Needed when there is no field control.
+bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_ARM]; } // Raises arm slowly
 
 // ## For PID
-const float countsPerMotorRotation[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
+const float COUNTS_PER_MOTOR_ROTATION[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
 enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above
 
 // ### System
-const int mainLoopDelay = 10;
+const int MAIN_LOOP_DELAY = 10;
 
 // ### Drive
 bool driveIsTank = true;
 bool driveWasPressed = false;
 
-const float wheelRadiusInches = 2;
-const float distancePerWheelRotation = 2 * PI * wheelRadiusInches * 0.0254; //0.0254 to convert inches to meters
-const short driveMotorType = TORQUE; // Drive using torque motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
+const float WHEEL_RADIUS_INCHES = 2;
+const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
+const short DRIVE_MOTORS_GEARING = TORQUE; // Drive using torque motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
 
 // ### Drive Pid
 // #### Left
 bool driveLErrorPositive = false;
 long driveLError = 0;
 long driveLIntegral = 0;
-const long driveLMaxValue = 30000;
+const long DRIVE_L_MAX_VALUE = 30000;
 long driveLTarget = 0;
 
 // #### Right
 bool driveRErrorPositive = false;
 long driveRError = 0;
 long driveRIntegral = 0;
-const long driveRMaxValue = 30000;
+const long DRIVE_R_MAX_VALUE = 30000;
 long driveRTarget = 0;
 
 // ### Intake
-const int intakeSpeed = 100;
+const int INTAKE_SPEED = 100;
 
 // ### Claw
 bool clawWasPressed = false;
 
 // ### Arm
-const int armSpeed = 127;
-const int armSlowSpeed = 50;
-const int armMaxHeight = 1300; // Max ~1370, but momentum so make it a bit lower
-const int armHighPostHeight = 1224;
-const int armLowPostHeight = 500; //TODO NOT ACTUALLY TESTED
+const int ARM_SPEED = 127;
+const int ARM_SLOW_SPEED = 50;
 
-// #### Arm Pid
-enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
-enum armPidStateEnum armPidState = ARM_PID_DISABLED; // initial state
-
-long armError = 0;
-long armIntegral = 0;
-const long armMaxValue = 30000;
-long armTarget = 0;
-
-bool armPidLockFirstTimePressed = true; // Button toggling free/lock at current height
-bool armPidPostFirstTimePressed = true; // Button toggling going to low/high post
-
+// #### Arm IME
+// 0 = very bottom
+const int ARM_MAX_HEIGHT = 1300; // Max ~1370, but momentum so make it a bit lower
+const int ARM_HIGH_POST_HEIGHT = 1224;
+const int ARM_LOW_POST_HEIGHT = 500; //TODO NOT ACTUALLY TESTED
 void resetArmImeZeroPoint() {
 	if (nLCDButtons == 1) resetMotorEncoder(armL); // reset if LCD LEFT BUTTON pressed (2=center,4=right)
 }
 
 
+// #### Arm PID
+enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
+enum armPidStateEnum armPidState = ARM_PID_DISABLED; // initial state
+
+long armError = 0;
+long armIntegral = 0;
+const long ARM_INTEGRAL_MAX_VALUE = 30000;
+long armTarget = 0;
+
+bool armPidLockFirstTimePressed = true; // Button toggling free/lock at current height
+bool armPidPostFirstTimePressed = true; // Button toggling going to low/high post
+
+
+
 // ## Launcher
-const int launcherSpeed = 100;
+const int LAUNCHER_SPEED = 100;
+
+
 
 float distanceToDriveTicks(float distance, short gearingType) {
-	return distance / distancePerWheelRotation * countsPerMotorRotation[gearingType];
+	return distance / METERS_PER_WHEEL_ROTATION * COUNTS_PER_MOTOR_ROTATION[gearingType];
 }
 
 
@@ -181,9 +188,10 @@ void pre_auton()
   resetMotorEncoder(driveMBL);
   resetMotorEncoder(armR);
 
-  bLCDBacklight = true;
+  bLCDBacklight = true; // Turn on backlight
 
   startTask(BatteryVoltageLCD);
+  
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -219,8 +227,8 @@ int armPid(int target, long currentArmImeValue, bool reset) {
 
 	armIntegral += error;
 
-	if (armIntegral > armMaxValue) armIntegral = armMaxValue;
-	else if (armIntegral < -armMaxValue) armIntegral = -armMaxValue;
+	if (armIntegral > ARM_INTEGRAL_MAX_VALUE) armIntegral = ARM_INTEGRAL_MAX_VALUE;
+	else if (armIntegral < -ARM_INTEGRAL_MAX_VALUE) armIntegral = -ARM_INTEGRAL_MAX_VALUE;
 
 	int armDerivative = error - armError;
 	armError = error; // Update error
@@ -242,7 +250,7 @@ int driveLPid(int distance, int maxSpeed, bool reset) {
 	const float kI = 0.01;
 	const float kD = 0.1;
 
-	long target = distanceToDriveTicks(distance, driveMotorType);
+	long target = distanceToDriveTicks(distance, DRIVE_MOTORS_GEARING);
 
 	if (reset) {
 		driveLError = driveLIntegral = 0; // Reset some values
@@ -261,8 +269,8 @@ int driveLPid(int distance, int maxSpeed, bool reset) {
 	driveLErrorPositive = currentDriveLImeValue > 0;
 
 
-	if (driveLIntegral > driveLMaxValue) driveLIntegral = driveLMaxValue;
-	else if (driveLIntegral < -driveLMaxValue) driveLIntegral = -driveLMaxValue;
+	if (driveLIntegral > DRIVE_L_MAX_VALUE) driveLIntegral = DRIVE_L_MAX_VALUE;
+	else if (driveLIntegral < -DRIVE_L_MAX_VALUE) driveLIntegral = -DRIVE_L_MAX_VALUE;
 
 	int driveLDerivative = error - driveLError;
 	driveLError = error; // Update error
@@ -281,7 +289,7 @@ int driveLPid(int distance, int maxSpeed, bool reset) {
 
 
 void auto() {
-	motor[launcher] = launcherSpeed;
+	motor[launcher] = LAUNCHER_SPEED;
 	wait1Msec(3500);
 	motor[launcher] = 0;
 
@@ -314,7 +322,7 @@ task usercontrol()
 	while (true)
 	{
 		// ### Random
-		wait1Msec(mainLoopDelay);
+		wait1Msec(MAIN_LOOP_DELAY);
 
 		clearLCDLine(1);
 		sprintf(lcdLineTwo, "Arm: %d", nMotorEncoder(armL));
@@ -329,7 +337,7 @@ task usercontrol()
 		// armPid(1000, nMotorEncoder(armL), false); // Change the value of the number
 
 		// ### Drive
-		if (vexRT[btnSwitchDriveMode] && !driveWasPressed) {
+		if (vexRT[BTN_TOGGLE_DRIVE_MODE] && !driveWasPressed) {
 			driveIsTank = !driveIsTank;
 			driveWasPressed = true;
 		}
@@ -345,27 +353,27 @@ task usercontrol()
 		long armImeValue = nMotorEncoder(armL);
 		bool reset = false;
 
-		if (vexRT[btnToggleLockArmPid]) { // Press to toggle arm IME state
+		if (vexRT[BTN_TOGGLE_LOCK_ARM_PID]) { // Press to toggle arm IME state
 			if (armPidLockFirstTimePressed) {
 				// Setup
 				if (armPidState != ARM_PID_LOCKED) armPidState = ARM_PID_LOCKED; // Enable if not currently in lock
 				else armPidState = ARM_PID_DISABLED; // Disable if currently locked
 
-				armTarget = armHighPostHeight; // Set the new target
+				armTarget = ARM_HIGH_POST_HEIGHT; // Set the new target
 				reset = true; // Must reset PID control since it was freshly pressed
 			}
 			armPidLockFirstTimePressed = false; // Ensure setup only runs once per button press
 		} else armPidLockFirstTimePressed = true; // If not pressed, the next time it is pressed the initialization will run
 
-		if (vexRT[btnTogglePostArmPid]) {
+		if (vexRT[BTN_TOGGLE_POST_ARM_PID]) {
 			if (armPidPostFirstTimePressed) {
 				if (armPidState == ARM_PID_LOW_POST) {
 					armPidState = ARM_PID_HIGH_POST; // If currently low, go to high
-					armTarget = armHighPostHeight;
+					armTarget = ARM_HIGH_POST_HEIGHT;
 				}
 				else {
 					armPidState = ARM_PID_LOW_POST; // Otherwise, go to low
-					armTarget = armLowPostHeight;
+					armTarget = ARM_LOW_POST_HEIGHT;
 				}
 				reset = true;
 			}
@@ -373,21 +381,21 @@ task usercontrol()
 		} else armPidPostFirstTimePressed = true;
 
 
-		if (vexRT[btnRaiseArm] || vexRT[btnLowerArm]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
+		if (vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
 
 		int power;
 		if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
 			power = armPid(armTarget, armImeValue, reset);
 		}
 		else {
-			if (vexRT[btnRaiseArm] && vexRT[btnLowerArm]) power = armSlowSpeed; //If both buttons pressed go up slowly
-			else if (vexRT[btnLowerArm]) power = -armSpeed;
-			else if (vexRT[btnRaiseArm]) power = armSpeed;
+			if (vexRT[BTN_RAISE_ARM] && vexRT[BTN_LOWER_ARM]) power = ARM_SLOW_SPEED; //If both buttons pressed go up slowly
+			else if (vexRT[BTN_LOWER_ARM]) power = -ARM_SPEED;
+			else if (vexRT[BTN_RAISE_ARM]) power = ARM_SPEED;
 			else power = 0;
 		}
 
 
-		if (armImeValue > armMaxHeight && power > 0) power = 0; // If going up and arm value greater than maximum, disable it
+		if (armImeValue > ARM_MAX_HEIGHT && power > 0) power = 0; // If going up and arm value greater than maximum, disable it
 		// TODO? Limit bottom as well?
 		arm(power);
 
@@ -395,15 +403,15 @@ task usercontrol()
 
 
     // ### Intake
-		motor[intake] = (vexRT[btnIntakeIn] - vexRT[btnIntakeOut]) * intakeSpeed;
+		motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
 
 		// ### Pneumatics
-		if (vexRT[btnTriggerPneumatics] && !clawWasPressed) { // Only runs once after button pressed
+		if (vexRT[BTN_TRIGGER_PNEUMATICS] && !clawWasPressed) { // Only runs once after button pressed
 			SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
 		}
-		clawWasPressed = vexRT[btnTriggerPneumatics];
+		clawWasPressed = vexRT[BTN_TRIGGER_PNEUMATICS];
 
 		// ### Launcher
-  	motor[launcher] = (vexRT[btnDrawLauncherBack] - vexRT[Btn7U]) * launcherSpeed; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
+  	motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
   }
 }
