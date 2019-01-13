@@ -66,7 +66,7 @@ const short BTN_DRAW_LAUNCHER_BACK = Btn7D;
 
 const short BTN_LOWER_ARM = Btn5D;
 const short BTN_RAISE_ARM = Btn5U;
-// NB: BTN_LOWER_ARM and BTN_RAISE_ARM at the same time causes it to rise slowly
+
 const short BTN_TOGGLE_LOCK_ARM_PID = Btn6D;
 const short BTN_TOGGLE_POST_ARM_PID = Btn8L;
 
@@ -126,7 +126,6 @@ const int ARM_LOW_POST_HEIGHT = 500; //TODO NOT ACTUALLY TESTED
 void resetArmImeZeroPoint() {
 	if (nLCDButtons == 1) resetMotorEncoder(armL); // reset if LCD LEFT BUTTON pressed (2=center,4=right)
 }
-
 
 // #### Arm PID
 enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
@@ -191,7 +190,7 @@ void pre_auton()
   bLCDBacklight = true; // Turn on backlight
 
   startTask(BatteryVoltageLCD);
-  
+
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -388,7 +387,7 @@ task usercontrol()
 			power = armPid(armTarget, armImeValue, reset);
 		}
 		else {
-			if (vexRT[BTN_RAISE_ARM] && vexRT[BTN_LOWER_ARM]) power = ARM_SLOW_SPEED; //If both buttons pressed go up slowly
+			if (btnComboRaiseArmSlowly()) power = ARM_SLOW_SPEED; //If both buttons pressed go up slowly
 			else if (vexRT[BTN_LOWER_ARM]) power = -ARM_SPEED;
 			else if (vexRT[BTN_RAISE_ARM]) power = ARM_SPEED;
 			else power = 0;
