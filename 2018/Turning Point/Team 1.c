@@ -26,6 +26,9 @@
 
 // TODO: limit to legal height under some conditions
 // TODO: Buttons to get to max height/high post and mid post
+// TODO: Button to reset arm IME to zero. Cortex?
+// TODO: 36 inch max expansion in any horizontal dimension.
+
 /*
 To reduce the maximum current for each circuit breaker (ports 1-5, 6-10, power expander), we have tried to spread the load equally. Thus, each breaker only has two drive motors as they will be used extensively, and the load for the arm is spread out across two breaker.
 
@@ -63,15 +66,16 @@ const short btnDrawLauncherBack = Btn7D;
 
 const short btnLowerArm = Btn5D;
 const short btnRaiseArm = Btn5U;
-const short btnToggleArmPid = Btn6D;
-const short btnArmLowPost = Btn8L;
+// NB: btnLowerArm and btnRaiseArm at the same time causes it to rise slowly
+const short btnToggleLockArmPid = Btn6D;
+const short btnTogglePostArmPid = Btn8L;
 
 const short btnSwitchDriveMode = Btn8U;
 
 const short btnIntakeIn = Btn6U;
 const short btnIntakeOut = Btn7R;
 
-bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers auton
+bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers autonomous. Needed when there is no field control.
 
 // ## For PID
 const float countsPerMotorRotation[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
@@ -84,8 +88,9 @@ const int mainLoopDelay = 10;
 bool driveIsTank = true;
 bool driveWasPressed = false;
 
-const float distancePerWheelRotation = 2 * PI * 4 * 0.0254; //0.0254 to convert inches to meters
-const short driveMotorType = TORQUE; // Drive using torque motors
+const float wheelRadiusInches = 2;
+const float distancePerWheelRotation = 2 * PI * wheelRadiusInches * 0.0254; //0.0254 to convert inches to meters
+const short driveMotorType = TORQUE; // Drive using torque motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
 
 // ### Drive Pid
 // #### Left
@@ -102,7 +107,6 @@ long driveRIntegral = 0;
 const long driveRMaxValue = 30000;
 long driveRTarget = 0;
 
-
 // ### Intake
 const int intakeSpeed = 100;
 
@@ -114,16 +118,24 @@ const int armSpeed = 127;
 const int armSlowSpeed = 50;
 const int armMaxHeight = 1300; // Max ~1370, but momentum so make it a bit lower
 const int armHighPostHeight = 1224;
-const int armLowPostHeight = 123456;
+const int armLowPostHeight = 500; //TODO NOT ACTUALLY TESTED
 
 // #### Arm Pid
+enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
+enum armPidStateEnum armPidState = ARM_PID_DISABLED; // initial state
+
 long armError = 0;
 long armIntegral = 0;
 const long armMaxValue = 30000;
 long armTarget = 0;
 
-bool armPidEnabled = false;
-bool armPidFirstTimePressed = true;
+bool armPidLockFirstTimePressed = true; // Button toggling free/lock at current height
+bool armPidPostFirstTimePressed = true; // Button toggling going to low/high post
+
+void resetArmImeZeroPoint() {
+	if (nLCDButtons == 1) resetMotorEncoder(armL); // reset if LCD LEFT BUTTON pressed (2=center,4=right)
+}
+
 
 // ## Launcher
 const int launcherSpeed = 100;
@@ -143,7 +155,7 @@ task BatteryVoltageLCD() {
 		clearLCDLine(0); // clear top line
 
 		primary = nImmediateBatteryLevel / 1000.0;
-		secondary = SensorValue[powerExpanderBatterySensor] / 180.0 // Vex forums say 270.0, but differs between cortex and power expander. 1.4-1.6 seems to be around the difference multiplier
+		secondary = SensorValue[powerExpanderBatterySensor] / 180.0; // Vex forums say 270.0, but differs between cortex and power expander. 1.4-1.6 seems to be around the difference multiplier
 		sprintf(line, "1: %.1fV; 2: %.1fV", primary, secondary);
 		displayLCDString(0, 0, line);
 	}
@@ -328,24 +340,44 @@ task usercontrol()
 
 
 		// ### Arm
+		resetArmImeZeroPoint();
+
 		long armImeValue = nMotorEncoder(armL);
-		bool wasFirstTimePressed = armPidFirstTimePressed; // Need this as will be set to false when armPid called
+		bool reset = false;
 
-		if (vexRT[btnToggleArmPid]) { // Press to toggle arm IME state
-			if (armPidFirstTimePressed) {
+		if (vexRT[btnToggleLockArmPid]) { // Press to toggle arm IME state
+			if (armPidLockFirstTimePressed) {
 				// Setup
-				armPidEnabled = !armPidEnabled;
-				armTarget = armHighPostHeight; // TEMPORARY armImeValue;
+				if (armPidState != ARM_PID_LOCKED) armPidState = ARM_PID_LOCKED; // Enable if not currently in lock
+				else armPidState = ARM_PID_DISABLED; // Disable if currently locked
+
+				armTarget = armHighPostHeight; // Set the new target
+				reset = true; // Must reset PID control since it was freshly pressed
 			}
-			armPidFirstTimePressed = false; // Ensure setup only runs once per button press
-		} else armPidFirstTimePressed = true;
+			armPidLockFirstTimePressed = false; // Ensure setup only runs once per button press
+		} else armPidLockFirstTimePressed = true; // If not pressed, the next time it is pressed the initialization will run
+
+		if (vexRT[btnTogglePostArmPid]) {
+			if (armPidPostFirstTimePressed) {
+				if (armPidState == ARM_PID_LOW_POST) {
+					armPidState = ARM_PID_HIGH_POST; // If currently low, go to high
+					armTarget = armHighPostHeight;
+				}
+				else {
+					armPidState = ARM_PID_LOW_POST; // Otherwise, go to low
+					armTarget = armLowPostHeight;
+				}
+				reset = true;
+			}
+			armPidPostFirstTimePressed = false;
+		} else armPidPostFirstTimePressed = true;
 
 
-		if (vexRT[btnRaiseArm] || vexRT[btnLowerArm]) armPidEnabled = false; // If either of the arm buttons are pressed, disable Pid
+		if (vexRT[btnRaiseArm] || vexRT[btnLowerArm]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
 
 		int power;
-		if (armPidEnabled) {
-			power = armPid(armTarget, armImeValue, wasFirstTimePressed);
+		if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
+			power = armPid(armTarget, armImeValue, reset);
 		}
 		else {
 			if (vexRT[btnRaiseArm] && vexRT[btnLowerArm]) power = armSlowSpeed; //If both buttons pressed go up slowly
@@ -353,8 +385,10 @@ task usercontrol()
 			else if (vexRT[btnRaiseArm]) power = armSpeed;
 			else power = 0;
 		}
-		if (armImeValue > armMaxValue && power > 0) power = 0; // If going up and arm value greater than maximum, disable it
 
+
+		if (armImeValue > armMaxHeight && power > 0) power = 0; // If going up and arm value greater than maximum, disable it
+		// TODO? Limit bottom as well?
 		arm(power);
 
 
