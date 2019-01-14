@@ -79,7 +79,7 @@ bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers a
 bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_ARM]; } // Raises arm slowly
 
 
-
+// ## Struct definitions
 
 
 typedef struct {
@@ -109,11 +109,67 @@ bool toggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed)
 }
 
 
+typedef struct {
+	int error;
+	int integral;
+	bool errorSignPositive; // Sign of the error
+
+	int target;
+
+	// Constants that need to be set
+	float P;
+	float I;
+	float D;
+	bool powerNeededToHoldPosition; // Whether or not power is needed to hold at the current position. If not, the integral will be set to zero when the sign of the error changes.
+	int maxIntegral; // Max value the integral can take
+	short maxPower; // Max motor strength
+} PidStruct;
+
+void resetPid(struct PidStruct *pid) {
+	pid->error = pid->integral = 0;
+	pid->errorSignPositive = true;
+}
+
+void initializePidStruct(struct PidStruct* pid, float P, float I, float D, bool powerNeededToHoldPosition, int maxIntegral, short maxPower) {
+	pid->P = P;
+	pid->I = I;
+	pid->D = D;
+	pid->powerNeededToHoldPosition = powerNeededToHoldPosition;
+	pid->maxIntegral = maxIntegral;
+	pid->maxPower = maxPower;
+
+	resetPid(pid); // need to initialize all variables
+}
 
 
 
 
-// ## For PID
+short runPid(struct PidStruct *pid, int currentImeValue) {
+	int error = pid->target - currentImeValue;
+
+	pid->integral += error;
+
+	if (pid->integral > pid->maxIntegral || pid->integral < -pid->maxIntegral) pid->integral = 0; // If too large, set to zero
+	if (!pid->powerNeededToHoldPosition &&
+		(error >= 0 && pid->error < 0 ||
+		error < 0 && pid->error >= 0)) pid->integral = 0; // If sign changes, set integral to zero
+
+	int delta = error - pid->error; // Find the rate of change
+
+	pid->error = error; // Set the new error
+
+	short power = pid->error * pid->P + pid->integral * pid->I + delta * pid->D;
+
+	// Limit power
+	if (power > pid->maxPower) power = pid->maxPower;
+	else if (power < -pid->maxPower) power = -pid->maxPower;
+
+	return power;
+}
+
+
+
+// ### PID variables
 const float COUNTS_PER_MOTOR_ROTATION[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
 enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above. Float not integral so can't use enum with custom values
 
@@ -128,6 +184,8 @@ const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; /
 const short DRIVE_MOTORS_GEARING = TORQUE; // Drive using torque motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
 
 // ### Drive Pid
+
+
 // #### Left
 bool driveLErrorPositive = false;
 long driveLError = 0;
@@ -156,10 +214,7 @@ const int ARM_SLOW_SPEED = 50;
 // 0 = very bottom
 const int ARM_MAX_HEIGHT = 1300; // Max ~1370, but momentum so make it a bit lower
 const int ARM_HIGH_POST_HEIGHT = 1224;
-const int ARM_LOW_POST_HEIGHT = 500; //TODO NOT ACTUALLY TESTED
-void resetArmImeZeroPoint() {
-	if (nLCDButtons == 1) resetMotorEncoder(armL); // reset if LCD LEFT BUTTON pressed (2=center,4=right)
-}
+const int ARM_LOW_POST_HEIGHT = 820;
 
 // #### Arm PID
 enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
@@ -168,11 +223,7 @@ enum armPidStateEnum armPidState = ARM_PID_DISABLED; // initial state
 struct ToggleButton armPidLockToggler;
 struct ToggleButton armPidPostToggler;
 
-
-long armError = 0;
-long armIntegral = 0;
-const long ARM_MAX_INTEGRAL = 30000;
-long armTarget = 0;
+struct PidStruct armPid;
 
 
 // ## Launcher
@@ -225,12 +276,13 @@ void pre_auton()
 
 	startTask(BatteryVoltageLCD);
 
-	// Initialization of ToggleButton structs (needs to occur within a function)
+	// Initialization of structs (needs to occur within a function)
 	initializeToggleButton(&driveIsTank, true); // default tank drive
 	initializeToggleButton(&armPidLockToggler, false); // Default values for Lock and Post Toggler doesn't actually matter-just want to know when the state changes
 	initializeToggleButton(&armPidPostToggler, false);
 	initializeToggleButton(&ClawClosed, false); // Same for claw
 
+	initializePidStruct(&armPid, 0.7, 0.01, 0.1, true, 30000, 127);
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -255,31 +307,89 @@ void driveArcade() { drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]); }
 void arm(int speed) { motor[armL] = speed; }
 
 
-int armPid(int target, long currentArmImeValue, bool reset) {
-	const float kP = 0.7;
-	const float kI = 0.01;
-	const float kD = 0.1;
+// int armPid(int target, long currentArmImeValue, bool reset) {
+// 	const float kP = 0.7;
+// 	const float kI = 0.01;
+// 	const float kD = 0.1;
 
-	if (reset) armError = armIntegral = 0;
+// 	if (reset) armError = armIntegral = 0;
 
-	long error = target - currentArmImeValue;
+// 	long error = target - currentArmImeValue;
 
-	armIntegral += error;
+// 	armIntegral += error;
 
-	if (armIntegral > ARM_MAX_INTEGRAL) armIntegral = ARM_MAX_INTEGRAL;
-	else if (armIntegral < -ARM_MAX_INTEGRAL) armIntegral = -ARM_MAX_INTEGRAL;
+// 	if (armIntegral > ARM_MAX_INTEGRAL) armIntegral = ARM_MAX_INTEGRAL;
+// 	else if (armIntegral < -ARM_MAX_INTEGRAL) armIntegral = -ARM_MAX_INTEGRAL;
 
-	int armDerivative = error - armError;
-	armError = error; // Update error
+// 	int armDerivative = error - armError;
+// 	armError = error; // Update error
 
-	int power = armError * kP + armIntegral * kI + armDerivative * kD;
+// 	int power = armError * kP + armIntegral * kI + armDerivative * kD;
 
-	// writeDebugStreamLine("Motor: %d Sensor: %d Error: %d dt: %d Integral %d", power, error + target, error, armDerivative, armIntegral);
+// 	// writeDebugStreamLine("Motor: %d Sensor: %d Error: %d dt: %d Integral %d", power, error + target, error, armDerivative, armIntegral);
 
-	if (power > 127) power = 127;
-	else if (power < -127) power = 127;
-	return power;
+// 	if (power > 127) power = 127;
+// 	else if (power < -127) power = 127;
+// 	return power;
+// }
+
+
+void armLogic() {
+	if (nLCDButtons == 1) resetMotorEncoder(armL); // Reset IME zero point if LCD LEFT BUTTON pressed (2=center,4=right)
+
+
+	long armImeValue = nMotorEncoder(armL);
+
+	if (toggleButtonSetter(&armPidLockToggler, vexRT[BTN_TOGGLE_LOCK_ARM_PID])) { // Runs if the value changes
+		if (armPidState == ARM_PID_LOCKED) armPidState = ARM_PID_DISABLED; // Disable PID if currently locked
+		else {
+			armPidState = ARM_PID_LOCKED; // If not locked, lock
+			resetPid(&armPid);
+			armPid.target = armImeValue;
+		}
+	}
+
+	if (toggleButtonSetter(&armPidPostToggler, vexRT[BTN_TOGGLE_POST_ARM_PID])) {
+		switch(armPidState) {
+			case ARM_PID_LOW_POST: // If currently low, next state is high
+				armPidState = ARM_PID_HIGH_POST;
+				resetPid(&armPid);
+				armPid.target = ARM_HIGH_POST_HEIGHT;
+				break;
+
+			case ARM_PID_HIGH_POST: // If currently high, disable
+				armPidState = ARM_PID_DISABLED;
+				break;
+
+			default:
+				armPidState = ARM_PID_LOW_POST;
+				resetPid(&armPid);
+				armPid.target = ARM_LOW_POST_HEIGHT;
+				break;
+		}
+	}
+
+
+	if (vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
+
+	int power;
+	if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
+		power = runPid(&armPid, armImeValue);
+	}
+	else {
+		if (btnComboRaiseArmSlowly()) power = ARM_SLOW_SPEED; //If both buttons pressed go up slowly
+		else if (vexRT[BTN_LOWER_ARM]) power = -ARM_SPEED;
+		else if (vexRT[BTN_RAISE_ARM]) power = ARM_SPEED;
+		else power = 0;
+	}
+
+
+	if (armImeValue > ARM_MAX_HEIGHT && power > 0) power = 0; // If going up and arm value greater than maximum, disable it
+	// TODO? Limit bottom as well?
+	arm(power);
+
 }
+
 
 
 // turns out, RobotC doesn't have pointers so I can't make any generic function for the two sides
@@ -323,7 +433,6 @@ int driveLPid(int distance, int maxSpeed, bool reset) {
 
 	return power;
 }
-
 
 
 
@@ -382,60 +491,7 @@ task usercontrol()
 
 
 		// ### Arm
-		resetArmImeZeroPoint();
-
-		long armImeValue = nMotorEncoder(armL);
-
-
-		bool initializePid = false;
-		if (toggleButtonSetter(&armPidLockToggler, vexRT[BTN_TOGGLE_LOCK_ARM_PID])) { // Runs if the value changes
-			if (armPidState == ARM_PID_LOCKED) armPidState = ARM_PID_DISABLED; // Disable PID if currently locked
-			else {
-				armPidState = ARM_PID_LOCKED; // If not locked, lock
-				initializePid = true;
-				armTarget = armImeValue;
-			}
-		}
-
-		if (toggleButtonSetter(&armPidPostToggler, vexRT[BTN_TOGGLE_POST_ARM_PID])) {
-			switch(armPidState) {
-				case ARM_PID_LOW_POST: // If currently low, next state is high
-					armPidState = ARM_PID_HIGH_POST;
-					initializePid = true;
-					armTarget = ARM_HIGH_POST_HEIGHT;
-					break;
-
-				case ARM_PID_HIGH_POST: // If currently high, disable
-					armPidState = ARM_PID_DISABLED;
-					break;
-
-				default:
-					armPidState = ARM_PID_LOW_POST;
-					initializePid = true;
-					armTarget = ARM_LOW_POST_HEIGHT;
-					break;
-			}
-		}
-
-
-		if (vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
-
-		int power;
-		if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
-			power = armPid(armTarget, armImeValue, initializePid);
-		}
-		else {
-			if (btnComboRaiseArmSlowly()) power = ARM_SLOW_SPEED; //If both buttons pressed go up slowly
-			else if (vexRT[BTN_LOWER_ARM]) power = -ARM_SPEED;
-			else if (vexRT[BTN_RAISE_ARM]) power = ARM_SPEED;
-			else power = 0;
-		}
-
-
-		if (armImeValue > ARM_MAX_HEIGHT && power > 0) power = 0; // If going up and arm value greater than maximum, disable it
-		// TODO? Limit bottom as well?
-		arm(power);
-
+		armLogic();
 
 
 
