@@ -78,6 +78,12 @@ const short BTN_INTAKE_OUT = Btn7R;
 bool btnComboAutonomous() { return vexRT[Btn7L] && vexRT[Btn8R]; } // Triggers autonomous. Needed when there is no field control.
 bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_ARM]; } // Raises arm slowly
 
+// ## Maths functions
+
+bool signsDifferent(int num1, int num2) {
+	return num1 >= 0 && num2 < 0 || num2 >= 0 && num1 < 0;
+}
+
 
 // ## Struct definitions
 
@@ -109,8 +115,32 @@ bool toggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed)
 
 
 typedef struct {
+	bool previouslyPressed;
+	ubyte state;
+	ubyte numStates;
+} NToggleButton;
+
+void initializeNToggleButton(struct NToggleButton* nToggleButton, ubyte initialState, ubyte numStates) {
+	nToggleButton->previouslyPressed = false;
+	nToggleButton->state = initialState;
+	nToggleButton->numStates = numStates;
+}
+bool NToggleButtonSetter(struct NToggleButton* nToggleButton, bool buttonIsPressed) {
+	if (buttonIsPressed && !nToggleButton->previouslyPressed) {
+		nToggleButton->previouslyPressed = true;
+		nToggleButton->state = (nToggleButton->state + 1) % nToggleButton->numStates;
+		return true;
+	}
+	nToggleButton->previouslyPressed = buttonIsPressed;
+	return false;
+}
+
+
+
+typedef struct {
 	int error;
 	int integral;
+	short derivative;
 	bool errorSignPositive; // Sign of the error
 
 	int target;
@@ -122,10 +152,17 @@ typedef struct {
 	bool powerNeededToHoldPosition; // Whether or not power is needed to hold at the current position. If not, the integral will be set to zero when the sign of the error changes.
 	int maxIntegral; // Max value the integral can take
 	short maxPower; // Max motor strength
+
+	short numLittleMovement; // Number of consecutive runs in which there has been little movement (abs(derivative) < something)
+	short numLittleMovementForEnd; // Number of consecutive runs in which there is little movement for PID to finish
+	short littleMovementDefinition; // Cannot change by more than this amount to be defined as little movement
+	bool pidFinished; // PID has ended. Not neccesarily goal reached, but no/little movement for some time
+	short power; // Output power
 } PidStruct;
 
 void resetPid(struct PidStruct *pid) {
-	pid->error = pid->integral = 0;
+	pid->error = pid->integral = pid->derivative = pid->power = pid->numLittleMovement = 0;
+	pid->pidFinished = false;
 	pid->errorSignPositive = true;
 }
 
@@ -136,31 +173,38 @@ void initializePidStruct(struct PidStruct* pid, float P, float I, float D, bool 
 	pid->powerNeededToHoldPosition = powerNeededToHoldPosition;
 	pid->maxIntegral = maxIntegral;
 	pid->maxPower = maxPower;
+	pid->littleMovementDefinition = 3;
+	pid->numLittleMovementForEnd = 50;
 
 	resetPid(pid); // need to initialize all variables
 }
 
 
 short runPid(struct PidStruct *pid, int currentImeValue) {
+	if (pid->pidFinished) return 0;
+
 	int error = pid->target - currentImeValue;
 
 	pid->integral += error;
 
-	if (pid->integral > pid->maxIntegral || pid->integral < -pid->maxIntegral) pid->integral = 0; // If too large, set to zero
-	if (!pid->powerNeededToHoldPosition &&
-		(error >= 0 && pid->error < 0 ||
-		error < 0 && pid->error >= 0)) pid->integral = 0; // If sign changes, set integral to zero
+	if (abs(pid->integral) > pid->maxIntegral) pid->integral = 0; // If too large, set to zero
+	if (!pid->powerNeededToHoldPosition && signsDifferent(error, pid->error)) pid->integral = 0; // If sign changes, set integral to zero
 
-	int delta = error - pid->error; // Find the rate of change
+	pid->derivative = error - pid->error; // Find the rate of change. pid->error gives the previous error
+
+	if (abs(pid->derivative) < pid->littleMovementDefinition) pid->numLittleMovement++;
+	else pid->numLittleMovement = 0; // Reset if movement larger
+	if (pid->numLittleMovement > pid->numLittleMovementForEnd) pid->pidFinished = true; //Stop movement
 
 	pid->error = error; // Set the new error
 
-	short power = pid->error * pid->P + pid->integral * pid->I + delta * pid->D;
+	short power = pid->error * pid->P + pid->integral * pid->I + pid->derivative * pid->D;
 
 	// Limit power
 	if (power > pid->maxPower) power = pid->maxPower;
 	else if (power < -pid->maxPower) power = -pid->maxPower;
 
+	pid->power = power;
 	return power;
 }
 
@@ -170,7 +214,7 @@ const float COUNTS_PER_MOTOR_ROTATION[] = {627.2, 392, 261.333 }; // Number of c
 enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above. Float not integral so can't use enum with custom values
 
 // ### System
-const int MAIN_LOOP_DELAY = 10;
+const short MAIN_LOOP_DELAY = 10; // PID done with 10msec main loop
 
 // ### Drive
 struct ToggleButton driveIsTank;
@@ -187,20 +231,20 @@ struct PidStruct driveLPid;
 struct PidStruct driveRPid;
 
 // ### Intake
-const int INTAKE_SPEED = 100;
+const short INTAKE_SPEED = 100;
 
 // ### Claw
 struct ToggleButton ClawClosed;
 
 // ### Arm
-const int ARM_SPEED = 127;
-const int ARM_SLOW_SPEED = 50;
+const short ARM_SPEED = 127;
+const short ARM_SLOW_SPEED = 50;
 
 // #### Arm IME
 // 0 = very bottom
-const int ARM_MAX_HEIGHT = 1300; // Max ~1370, but momentum so make it a bit lower
-const int ARM_HIGH_POST_HEIGHT = 1224;
-const int ARM_LOW_POST_HEIGHT = 820;
+const short ARM_MAX_HEIGHT = 1300; // Max ~1370, but momentum so make it a bit lower
+const short ARM_HIGH_POST_HEIGHT = 1224;
+const short ARM_LOW_POST_HEIGHT = 820;
 
 // #### Arm PID
 enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
@@ -213,7 +257,7 @@ struct PidStruct armPid;
 
 
 // ## Launcher
-const int LAUNCHER_SPEED = 100;
+const short LAUNCHER_SPEED = 100;
 
 
 
@@ -228,9 +272,15 @@ task BatteryVoltageLCD() {
 		wait1Msec(1000); // Updates every second
 		clearLCDLine(0); // clear top line
 
-		primary = nImmediateBatteryLevel / 1000.0;
-		secondary = SensorValue[powerExpanderBatterySensor] / 180.0; // Vex forums say 270.0, but differs between cortex and power expander. 1.4-1.6 seems to be around the difference multiplier
-		sprintf(line, "1: %.1fV; 2: %.1fV", primary, secondary);
+		short powerExpanderRaw = SensorValue[powerExpanderBatterySensor];
+		if (powerExpanderRaw < 300) {
+			sprintf(line, "2ND BATTERY");
+		} else {
+			primary = nImmediateBatteryLevel / 1000.0;
+			secondary = powerExpanderRaw / 180.0; // Vex forums say 270.0, but differs between cortex and power expander. 1.4-1.6 seems to be around the difference multiplier
+			sprintf(line, "1: %.1f; 2: %.1f", primary, secondary);
+		}
+
 		displayLCDString(0, 0, line);
 	}
 	// endTimeSlice() needed if there is no wait
@@ -253,7 +303,7 @@ void pre_auton()
 
 	resetMotorEncoder(armL); // Otherwise, this returns 0. Very fustrating
 	resetMotorEncoder(driveMBL);
-	resetMotorEncoder(armR);
+	resetMotorEncoder(driveMR);
 
 	bLCDBacklight = true; // Turn on backlight
 
@@ -266,8 +316,8 @@ void pre_auton()
 	initializeToggleButton(&ClawClosed, false); // Same for claw
 
 	initializePidStruct(&armPid, 0.75, 0.008, 1, true, 30000, 127);
-	initializePidStruct(&driveLPid, 1, 0, 0, false, 10000, 60);
-	memcpy(&driveRPid, &driveLPid, sizeof(PidStruct)); // Copy settings for left to right. Can do this as the struct has no pointers
+	initializePidStruct(&driveLPid, 0.3, 0, 1, false, 10000, 127);
+	memcpy(&driveRPid, &driveLPid, sizeof(PidStruct)); // Copy settings for left to right. Can do this as the struct has no pointers so values, not references are used
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -279,7 +329,7 @@ void pre_auton()
 }
 
 
-void drive(int l, int r) {
+void drive(short l, short r) {
 	motor[driveMBL] = l;
 	motor[driveMR] = r;
 }
@@ -299,11 +349,25 @@ void driveStraight(bool reset, float distanceMeters) {
 	}
 
 	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
-	short r = runPid(&driveLPid, nMotorEncoder(driveMR));
+	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
+
+	/*
 	clearLCDLine(0);
 	string str;
-	sprintf(str, "L: %d; R: %d", l, r);
-	displayLCDString(0,0, str);
+	sprintf(str, "L:%d %d;R:%d %d;%d", l, driveLPid.pidFinished, r, driveRPid.pidFinished, driveRPid.D);
+	clearLCDLine(1);
+	displayLCDString(1,0,str);*/
+
+	datalogDataGroupStart();
+	datalogAddValue(0, l);
+	datalogAddValue(1, driveLPid.error);
+	datalogAddValue(2, driveLPid.derivative);
+	datalogAddValue(3, driveLPid.numLittleMovement);
+	datalogAddValue(4, r);
+	datalogAddValue(5, driveRPid.error);
+	datalogAddValue(6, driveRPid.derivative);
+	datalogAddValue(7, driveRPid.numLittleMovement);
+	datalogDataGroupEnd();
 	drive(l, r);
 
 }
@@ -314,14 +378,14 @@ void driveArcade() { drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]); }
 
 
 
-void arm(int speed) { motor[armL] = speed; }
+void arm(short speed) { motor[armL] = speed; }
 
 
 void armLogic() {
 	if (nLCDButtons == 1) resetMotorEncoder(armL); // Reset IME zero point if LCD LEFT BUTTON pressed (2=center,4=right)
 
 
-	long armImeValue = nMotorEncoder(armL);
+	short armImeValue = nMotorEncoder(armL); // Short as arm cannot freely rotate (like drive) so range will be limited to < 32000
 
 	if (toggleButtonSetter(&armPidLockToggler, vexRT[BTN_TOGGLE_LOCK_ARM_PID])) { // Runs if the value changes
 		if (armPidState == ARM_PID_LOCKED) armPidState = ARM_PID_DISABLED; // Disable PID if currently locked
@@ -355,7 +419,7 @@ void armLogic() {
 
 	if (vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
 
-	int power;
+	short power;
 	if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
 		power = runPid(&armPid, armImeValue);
 	}
@@ -375,51 +439,6 @@ void armLogic() {
 
 
 
-//
-// riveL => riveR, MBL => MR
-/*
-int driveLPid(int distance, int maxSpeed, bool reset) {
-	const float kP = 0.7;
-	const float kI = 0.01;
-	const float kD = 0.1;
-
-	long target = distanceToDriveTicks(distance, DRIVE_MOTORS_GEARING);
-
-	if (reset) {
-		driveLError = driveLIntegral = 0; // Reset some values
-		resetMotorEncoder(driveMBL);
-		driveLErrorPositive = true; // Zero is positive
-	}
-
-	long currentDriveLImeValue = nMotorEncoder(driveMBL);
-
-	long error = target - currentDriveLImeValue;
-
-	driveLIntegral += error;
-
-	if (currentDriveLImeValue > 0 && !driveLErrorPositive || currentDriveLImeValue < 0 && driveLErrorPositive) driveLIntegral = 0; //If errors have different signs, then passed the target. Thus, set integral to zero;
-
-	driveLErrorPositive = currentDriveLImeValue > 0;
-
-
-	if (driveLIntegral > DRIVE_L_MAX_INTEGRAL) driveLIntegral = DRIVE_L_MAX_INTEGRAL;
-	else if (driveLIntegral < -DRIVE_L_MAX_INTEGRAL) driveLIntegral = -DRIVE_L_MAX_INTEGRAL;
-
-	int driveLDerivative = error - driveLError;
-	driveLError = error; // Update error
-
-	int power = driveLError * kP + driveLIntegral * kI + driveLDerivative * kD;
-
-	if (power > maxSpeed) power = maxSpeed;
-	if (power < -maxSpeed) power = -maxSpeed;
-
-	// writeDebugStreamLine("Motor: %d Sensor: %d Error: %d dt: %d Integral %d", power, error + target, error, driveLDerivative, driveLIntegral);
-
-	return power;
-}
-*/
-
-
 void auto() {
 	motor[launcher] = LAUNCHER_SPEED;
 	wait1Msec(3500);
@@ -435,34 +454,45 @@ task autonomous()
 
 
 
+char PIDTypeFromShort(short a) {
+	if (a == 0) return 'P';
+	if (a == 1) return 'I';
+	if (a == 2) return 'D';
+	return '?';
+}
+float PIDValFromShort(short a, struct PidStruct* struc) {
+	if (a == 0) return struc->P;
+	if (a == 1) return struc->I;
+	if (a == 2) return struc->D;
+	return 0;
+}
+
+float adder(float val) {
+			return val + 0.005 * ((nLCDButtons == 4)?1:-1);
+		}
 
 task usercontrol()
 {
-	// auto();
-	// int maxSpeed = 40;
-	// int l = driveLPid(1, maxSpeed, true);
-	// int r = driveRPid(1, maxSpeed, true);
-
-	// drive(l, r);
-
+	bool direction = true;
 	string lcdLineTwo;
-	bool first = true;
+	struct ToggleButton temp;
+	initializeToggleButton(&temp, false);
+
+	struct NToggleButton PIDSwitcher;
+	initializeNToggleButton(&PIDSwitcher, 0, 3);
+
+
 	while (true)
 	{
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
-
 		clearLCDLine(1);
-		sprintf(lcdLineTwo, "Arm: %d", nMotorEncoder(armL));
+		//sprintf(lcdLineTwo, "A:%d;L:%d;R:%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR));
+		// sprintf(lcdLineTwo, "%.3f,%d,%d", driveRPid.I, driveLPid.target - nMotorEncoder(driveMBL), driveRPid.target - nMotorEncoder(driveMR));
+		sprintf(lcdLineTwo, "%c:%.3f,%d,%d", PIDTypeFromShort(PIDSwitcher.state), PIDValFromShort(PIDSwitcher.state, &driveRPid), driveLPid.target - nMotorEncoder(driveMBL), driveRPid.target - nMotorEncoder(driveMR));
 		displayLCDString(1, 0, lcdLineTwo);
 
 		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
-
-		// int l = driveLPid(1, maxSpeed, false);
-		// int r = driveRPid(1, maxSpeed, false);
-		// drive(l, r);
-
-		// armPid(1000, nMotorEncoder(armL), false); // Change the value of the number
 
 		// ### Drive
 		/*
@@ -470,9 +500,29 @@ task usercontrol()
 		if (driveIsTank.isTrue) driveTank();
 		else driveArcade();
 */
+		NToggleButtonSetter(&PIDSwitcher, nLCDButtons == 2);
 
-		driveStraight(first, 0.3);
-		first = false;
+		if (toggleButtonSetter(&temp, vexRT[Btn7U]) && temp.isTrue) {
+			driveStraight(true, 0.3 * (direction?1:-1));
+			direction = !direction;
+		}
+		else if (temp.isTrue) driveStraight(false, 0);
+		else drive(0,0);
+
+
+		if (nLCDButtons == 1 || nLCDButtons == 4) {
+			switch(PIDSwitcher.state) {
+				case 0:
+					driveRPid.P = driveLPid.P = adder(driveRPid.P);
+					break;
+				case 1:
+					driveRPid.I = driveLPid.I = adder(driveRPid.I);
+					break;
+				case 2:
+					driveRPid.D = driveLPid.D = adder(driveRPid.D);
+					break;
+			}
+		}
 
 		// ### Arm
 		armLogic();
@@ -495,23 +545,24 @@ task usercontrol()
 
 
 // Multistate toggler
-typedef struct {
-	bool previouslyPressed;
-	ubyte state;
-	ubyte numStates;
-} NToggleButton;
 
-void initializeNToggleButton(struct NToggleButton* nToggleButton, ubyte initialState, ubyte numStates) {
-	nToggleButton->previouslyPressed = false;
-	nToggleButton->state = initialState;
-	nToggleButton->numStates = numStates;
-}
-bool NToggleButtonSetter(struct NToggleButton* nToggleButton, bool buttonIsPressed) {
-	if (buttonIsPressed && !nToggleButton->previouslyPressed) {
-		nToggleButton->previouslyPressed = true;
-		nToggleButton->state = (nToggleButton->state + 1) % nToggleButton->numStates;
-		return true;
-	}
-	nToggleButton->previouslyPressed = buttonIsPressed;
-	return false;
-}
+// typedef struct {
+// 	bool previouslyPressed;
+// 	ubyte state;
+// 	ubyte numStates;
+// } NToggleButton;
+
+// void initializeNToggleButton(struct NToggleButton* nToggleButton, ubyte initialState, ubyte numStates) {
+// 	nToggleButton->previouslyPressed = false;
+// 	nToggleButton->state = initialState;
+// 	nToggleButton->numStates = numStates;
+// }
+// bool NToggleButtonSetter(struct NToggleButton* nToggleButton, bool buttonIsPressed) {
+// 	if (buttonIsPressed && !nToggleButton->previouslyPressed) {
+// 		nToggleButton->previouslyPressed = true;
+// 		nToggleButton->state = (nToggleButton->state + 1) % nToggleButton->numStates;
+// 		return true;
+// 	}
+// 	nToggleButton->previouslyPressed = buttonIsPressed;
+// 	return false;
+// }
