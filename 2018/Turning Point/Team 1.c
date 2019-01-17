@@ -24,6 +24,11 @@
 //Main competition background code...do not modify!
 #include "Vex_Competition_Includes.c"
 
+#include "ToggleButton.c"
+#include "NToggleButton.c"
+#include "PidStruct.c"
+#include "Helper.c"
+
 // TODO: limit to legal height under some conditions
 // TODO: Buttons to get to max height/high post and mid post
 // TODO: Button to reset arm IME to zero. Cortex?
@@ -80,133 +85,6 @@ bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_A
 
 // ## Maths functions
 
-bool signsDifferent(int num1, int num2) {
-	return num1 >= 0 && num2 < 0 || num2 >= 0 && num1 < 0;
-}
-
-
-// ## Struct definitions
-
-
-typedef struct {
-	bool previouslyPressed;
-	bool isTrue;
-} ToggleButton;
-
-// RobotC doesn't support functions returning structs... even though the official documentation has an example of this
-void initializeToggleButton(struct ToggleButton* toggleButton, bool initialState) {
-	toggleButton->previouslyPressed = false; // Always starts with no press
-	toggleButton->isTrue = initialState;
-}
-
-
-// Updates the state of a ToggleButton
-// Args. toggleButton: pointer to ToggleButton struct; buttonIsPressed: whether or not the button is pressed
-// Return. true if the state has been changed, false if not
-bool toggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed) {
-	if (buttonIsPressed && !toggleButton->previouslyPressed) { // Check if pressed and wasn't previously pressed
-		toggleButton->previouslyPressed = true; // Now, have previously pressed it.
-		toggleButton->isTrue = !toggleButton->isTrue; // If so, toggle the value and return true
-		return true;
-	}
-	toggleButton->previouslyPressed = buttonIsPressed; // If pressed, previously pressed is true. If not pressed, false. So just set to buttonIsPressed.
-	return false; // No change to value, so return false
-}
-
-
-typedef struct {
-	bool previouslyPressed;
-	ubyte state;
-	ubyte numStates;
-} NToggleButton;
-
-void initializeNToggleButton(struct NToggleButton* nToggleButton, ubyte initialState, ubyte numStates) {
-	nToggleButton->previouslyPressed = false;
-	nToggleButton->state = initialState;
-	nToggleButton->numStates = numStates;
-}
-bool NToggleButtonSetter(struct NToggleButton* nToggleButton, bool buttonIsPressed) {
-	if (buttonIsPressed && !nToggleButton->previouslyPressed) {
-		nToggleButton->previouslyPressed = true;
-		nToggleButton->state = (nToggleButton->state + 1) % nToggleButton->numStates;
-		return true;
-	}
-	nToggleButton->previouslyPressed = buttonIsPressed;
-	return false;
-}
-
-
-
-typedef struct {
-	int error;
-	int integral;
-	short derivative;
-	bool errorSignPositive; // Sign of the error
-
-	int target;
-
-	// Constants that need to be set
-	float P;
-	float I;
-	float D;
-	bool powerNeededToHoldPosition; // Whether or not power is needed to hold at the current position. If not, the integral will be set to zero when the sign of the error changes.
-	int maxIntegral; // Max value the integral can take
-	short maxPower; // Max motor strength
-
-	short numLittleMovement; // Number of consecutive runs in which there has been little movement (abs(derivative) < something)
-	short numLittleMovementForEnd; // Number of consecutive runs in which there is little movement for PID to finish
-	short littleMovementDefinition; // Cannot change by more than this amount to be defined as little movement
-	bool pidFinished; // PID has ended. Not neccesarily goal reached, but no/little movement for some time
-	short power; // Output power
-} PidStruct;
-
-void resetPid(struct PidStruct *pid) {
-	pid->error = pid->integral = pid->derivative = pid->power = pid->numLittleMovement = 0;
-	pid->pidFinished = false;
-	pid->errorSignPositive = true;
-}
-
-void initializePidStruct(struct PidStruct* pid, float P, float I, float D, bool powerNeededToHoldPosition, int maxIntegral, short maxPower) {
-	pid->P = P;
-	pid->I = I;
-	pid->D = D;
-	pid->powerNeededToHoldPosition = powerNeededToHoldPosition;
-	pid->maxIntegral = maxIntegral;
-	pid->maxPower = maxPower;
-	pid->littleMovementDefinition = 3;
-	pid->numLittleMovementForEnd = 50;
-
-	resetPid(pid); // need to initialize all variables
-}
-
-
-short runPid(struct PidStruct *pid, int currentImeValue) {
-	if (pid->pidFinished) return 0;
-
-	int error = pid->target - currentImeValue;
-
-	pid->integral += error;
-
-	if (abs(pid->integral) > pid->maxIntegral) pid->integral = 0; // If too large, set to zero
-	if (!pid->powerNeededToHoldPosition && signsDifferent(error, pid->error)) pid->integral = 0; // If sign changes, set integral to zero
-
-	pid->derivative = error - pid->error; // Find the rate of change. pid->error gives the previous error
-
-	if (abs(pid->derivative) < pid->littleMovementDefinition) pid->numLittleMovement++;
-	else pid->numLittleMovement = 0; // Reset if movement larger
-	if (pid->numLittleMovement > pid->numLittleMovementForEnd) pid->pidFinished = true; //Stop movement
-
-	pid->error = error; // Set the new error
-
-	short power = pid->error * pid->P + pid->integral * pid->I + pid->derivative * pid->D;
-
-	// Limit power
-	if (power > pid->maxPower) power = pid->maxPower;
-	else if (power < -pid->maxPower) power = -pid->maxPower;
-
-	pid->power = power;
-	return power;
-}
 
 
 // ### PID variables
@@ -351,13 +229,6 @@ void driveStraight(bool reset, float distanceMeters) {
 	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
 	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
 
-	/*
-	clearLCDLine(0);
-	string str;
-	sprintf(str, "L:%d %d;R:%d %d;%d", l, driveLPid.pidFinished, r, driveRPid.pidFinished, driveRPid.D);
-	clearLCDLine(1);
-	displayLCDString(1,0,str);*/
-
 	datalogDataGroupStart();
 	datalogAddValue(0, l);
 	datalogAddValue(1, driveLPid.error);
@@ -466,17 +337,18 @@ float PIDValFromShort(short a, struct PidStruct* struc) {
 	if (a == 2) return struc->D;
 	return 0;
 }
-
 float adder(float val) {
-			return val + 0.005 * ((nLCDButtons == 4)?1:-1);
-		}
+	return val + 0.005 * ((nLCDButtons == 4)?1:-1);
+}
 
 task usercontrol()
 {
 	bool direction = true;
 	string lcdLineTwo;
 	struct ToggleButton temp;
+	struct ToggleButton temp2;
 	initializeToggleButton(&temp, false);
+	initializeToggleButton(&temp2, false);
 
 	struct NToggleButton PIDSwitcher;
 	initializeNToggleButton(&PIDSwitcher, 0, 3);
@@ -501,12 +373,22 @@ task usercontrol()
 		else driveArcade();
 */
 		NToggleButtonSetter(&PIDSwitcher, nLCDButtons == 2);
-
-		if (toggleButtonSetter(&temp, vexRT[Btn7U]) && temp.isTrue) {
-			driveStraight(true, 0.3 * (direction?1:-1));
-			direction = !direction;
+		float distance = 0.3;
+		if (toggleButtonSetter(&temp, vexRT[Btn7U]) {
+			if (temp.isTrue) {
+				driveStraight(true, distance);
+			}
+			temp2.isTrue = false;
 		}
-		else if (temp.isTrue) driveStraight(false, 0);
+
+		else if (toggleButtonSetter(&temp2, vexRT[Btn7D]) {
+			if (temp2.isTrue) {
+				driveStraight(true, -distance);
+			}
+			temp.isTrue = false;
+		}
+
+		else if (temp.isTrue || temp2.isTrue) driveStraight(false, 0);
 		else drive(0,0);
 
 
@@ -525,44 +407,15 @@ task usercontrol()
 		}
 
 		// ### Arm
-		armLogic();
-
-
+		// armLogic();
 
 	    // ### Intake
-		motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
+		// motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
 
 		// ### Pneumatics
-		if (toggleButtonSetter(&ClawClosed, vexRT[BTN_TRIGGER_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
-
+		// if (toggleButtonSetter(&ClawClosed, vexRT[BTN_TRIGGER_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
 
 		// ### Launcher
-		motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
+		// motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
 	}
 }
-
-
-
-
-// Multistate toggler
-
-// typedef struct {
-// 	bool previouslyPressed;
-// 	ubyte state;
-// 	ubyte numStates;
-// } NToggleButton;
-
-// void initializeNToggleButton(struct NToggleButton* nToggleButton, ubyte initialState, ubyte numStates) {
-// 	nToggleButton->previouslyPressed = false;
-// 	nToggleButton->state = initialState;
-// 	nToggleButton->numStates = numStates;
-// }
-// bool NToggleButtonSetter(struct NToggleButton* nToggleButton, bool buttonIsPressed) {
-// 	if (buttonIsPressed && !nToggleButton->previouslyPressed) {
-// 		nToggleButton->previouslyPressed = true;
-// 		nToggleButton->state = (nToggleButton->state + 1) % nToggleButton->numStates;
-// 		return true;
-// 	}
-// 	nToggleButton->previouslyPressed = buttonIsPressed;
-// 	return false;
-// }
