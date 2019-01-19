@@ -229,18 +229,7 @@ void driveStraight(bool reset, float distanceMeters) {
 	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
 	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
 
-	datalogDataGroupStart();
-	datalogAddValue(0, l);
-	datalogAddValue(1, driveLPid.error);
-	datalogAddValue(2, driveLPid.derivative);
-	datalogAddValue(3, driveLPid.numLittleMovement);
-	datalogAddValue(4, r);
-	datalogAddValue(5, driveRPid.error);
-	datalogAddValue(6, driveRPid.derivative);
-	datalogAddValue(7, driveRPid.numLittleMovement);
-	datalogDataGroupEnd();
 	drive(l, r);
-
 }
 
 
@@ -324,98 +313,31 @@ task autonomous()
 
 
 
-
-char PIDTypeFromShort(short a) {
-	if (a == 0) return 'P';
-	if (a == 1) return 'I';
-	if (a == 2) return 'D';
-	return '?';
-}
-float PIDValFromShort(short a, struct PidStruct* struc) {
-	if (a == 0) return struc->P;
-	if (a == 1) return struc->I;
-	if (a == 2) return struc->D;
-	return 0;
-}
-float adder(float val) {
-	return val + 0.005 * ((nLCDButtons == 4)?1:-1);
-}
-
 task usercontrol()
 {
-	bool direction = true;
-	string lcdLineTwo;
-	struct ToggleButton temp;
-	struct ToggleButton temp2;
-	initializeToggleButton(&temp, false);
-	initializeToggleButton(&temp2, false);
-
-	struct NToggleButton PIDSwitcher;
-	initializeNToggleButton(&PIDSwitcher, 0, 3);
-
-
 	while (true)
 	{
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
-		clearLCDLine(1);
-		//sprintf(lcdLineTwo, "A:%d;L:%d;R:%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR));
-		// sprintf(lcdLineTwo, "%.3f,%d,%d", driveRPid.I, driveLPid.target - nMotorEncoder(driveMBL), driveRPid.target - nMotorEncoder(driveMR));
-		sprintf(lcdLineTwo, "%c:%.3f,%d,%d", PIDTypeFromShort(PIDSwitcher.state), PIDValFromShort(PIDSwitcher.state, &driveRPid), driveLPid.target - nMotorEncoder(driveMBL), driveRPid.target - nMotorEncoder(driveMR));
-		displayLCDString(1, 0, lcdLineTwo);
 
 		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
 
 		// ### Drive
-		/*
 		toggleButtonSetter(&driveIsTank, vexRT[BTN_TOGGLE_DRIVE_MODE]);
 		if (driveIsTank.isTrue) driveTank();
 		else driveArcade();
-*/
-		NToggleButtonSetter(&PIDSwitcher, nLCDButtons == 2);
-		float distance = 0.34 * PI / 4;
-		if (toggleButtonSetter(&temp, vexRT[Btn7U])) {
-			if (temp.isTrue) {
-				driveStraight(true, distance);
-			}
-			temp2.isTrue = false;
-		}
 
-		else if (toggleButtonSetter(&temp2, vexRT[Btn7D])) {
-			if (temp2.isTrue) {
-				driveStraight(true, -distance);
-			}
-			temp.isTrue = false;
-		}
-
-		else if (temp.isTrue || temp2.isTrue) driveStraight(false, 0);
-		else drive(0,0);
-
-
-		if (nLCDButtons == 1 || nLCDButtons == 4) {
-			switch(PIDSwitcher.state) {
-				case 0:
-					driveRPid.P = driveLPid.P = adder(driveRPid.P);
-					break;
-				case 1:
-					driveRPid.I = driveLPid.I = adder(driveRPid.I);
-					break;
-				case 2:
-					driveRPid.D = driveLPid.D = adder(driveRPid.D);
-					break;
-			}
-		}
 
 		// ### Arm
-		// armLogic();
+		armLogic();
 
 	    // ### Intake
-		// motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
+		motor[intake] = (vexRT[BTN_INTAKE_IN] - vexRT[BTN_INTAKE_OUT]) * INTAKE_SPEED;
 
 		// ### Pneumatics
-		// if (toggleButtonSetter(&ClawClosed, vexRT[BTN_TRIGGER_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
+		if (toggleButtonSetter(&ClawClosed, vexRT[BTN_TRIGGER_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
 
 		// ### Launcher
-		// motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[Btn7U]) * LAUNCHER_SPEED; // Draw the launcher back // TEMP TODOD!!!!!!!!!!!!!!!!!
+		motor[launcher] = vexRT[BTN_DRAW_LAUNCHER_BACK] * LAUNCHER_SPEED; // Draw the launcher back
 	}
 }
