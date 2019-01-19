@@ -45,14 +45,14 @@ For motor naming, look at the robot from above with the cap flipper pointing upw
 
 | Port | Motor Description                    | Name     | Slave Motor    | Power Expander | IME              | Gearing | Reversed |
 |------|--------------------------------------|----------|----------------|----------------|------------------|---------|----------|
-| 1    | Middle Right Drive                   | driveMR  | Master         | No             | Yes - 1          | Torque  | Yes      |
-| 2    | Back Right Drive                     | driveBR  | Yes - driveMR  | No             | No               | Torque  | Yes      |
+| 1    | Middle Right Drive                   | driveMR  | Master         | No             | Yes - 1          | Speed   | Yes      |
+| 2    | Back Right Drive                     | driveBR  | Yes - driveMR  | No             | No               | Speed   | Yes      |
 | 3    | Arm Right                            | armR     | Yes - armL     | No             | No               | Unknown | No       |
 | 4    | Intake                               | intake   | No             | Yes - A        | No               | Torque  | Yes      |
-| 5    | Back and Middle Left Drive (Y-Cable) | driveMBL | Master         | Yes - B        | Yes (Middle) - 3 | Torque  | No       |
+| 5    | Back and Middle Left Drive (Y-Cable) | driveMBL | Master         | Yes - B        | Yes (Middle) - 3 | Speed   | No       |
 | 6    | Launcher                             | launcher | No             | Yes - C        | No               | Unknown | Yes      |
-| 7    | Front Left Drive                     | driveFL  | Yes - driveMBL | No             | No               | Torque  | No       |
-| 8    | Front Right Drive                    | driveFR  | Yes - driveMR  | No             | No               | Torque  | Yes      |
+| 7    | Front Left Drive                     | driveFL  | Yes - driveMBL | No             | No               | Speed   | No       |
+| 8    | Front Right Drive                    | driveFR  | Yes - driveMR  | No             | No               | Speed   | Yes      |
 | 9    | Arm Left                             | armL     | Master         | No             | Yes - 3          | Unknown | Yes      |
 
 
@@ -99,7 +99,7 @@ struct ToggleButton driveIsTank;
 
 const float WHEEL_RADIUS_INCHES = 2;
 const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
-const short DRIVE_MOTORS_GEARING = TORQUE; // Drive using torque motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
+const short DRIVE_MOTORS_GEARING = HIGHSPEED; // Drive using speed motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
 int distanceToDriveTicks(float distance) {
 	return (int) (COUNTS_PER_MOTOR_ROTATION[DRIVE_MOTORS_GEARING] * distance / METERS_PER_WHEEL_ROTATION); // May be off by up to *gasp* 1 tick due to rounding down
 }
@@ -194,7 +194,7 @@ void pre_auton()
 	initializeToggleButton(&ClawClosed, false); // Same for claw
 
 	initializePidStruct(&armPid, 0.75, 0.008, 1, true, 30000, 127);
-	initializePidStruct(&driveLPid, 0.3, 0, 1, false, 10000, 127);
+	initializePidStruct(&driveLPid, 0.32, 0, 4.1, false, 10000, 127);
 	memcpy(&driveRPid, &driveLPid, sizeof(PidStruct)); // Copy settings for left to right. Can do this as the struct has no pointers so values, not references are used
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
@@ -373,15 +373,15 @@ task usercontrol()
 		else driveArcade();
 */
 		NToggleButtonSetter(&PIDSwitcher, nLCDButtons == 2);
-		float distance = 0.3;
-		if (toggleButtonSetter(&temp, vexRT[Btn7U]) {
+		float distance = 0.34 * PI / 4;
+		if (toggleButtonSetter(&temp, vexRT[Btn7U])) {
 			if (temp.isTrue) {
 				driveStraight(true, distance);
 			}
 			temp2.isTrue = false;
 		}
 
-		else if (toggleButtonSetter(&temp2, vexRT[Btn7D]) {
+		else if (toggleButtonSetter(&temp2, vexRT[Btn7D])) {
 			if (temp2.isTrue) {
 				driveStraight(true, -distance);
 			}
