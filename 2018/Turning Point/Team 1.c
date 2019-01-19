@@ -25,9 +25,9 @@
 #include "Vex_Competition_Includes.c"
 
 #include "ToggleButton.c"
-#include "NToggleButton.c"
 #include "PidStruct.c"
-#include "Helper.c"
+// #include "Helper.c"
+// #include "NToggleButton.c"
 
 // TODO: limit to legal height under some conditions
 // TODO: Buttons to get to max height/high post and mid post
@@ -315,10 +315,14 @@ task autonomous()
 
 task usercontrol()
 {
+	string line2;
 	while (true)
 	{
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
+		clearLCDLine(1);
+		sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
+		displayLCDString(1,0,line2);
 
 		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
 
