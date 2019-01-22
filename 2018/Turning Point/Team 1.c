@@ -1,4 +1,4 @@
-#pragma config(I2C_Usage, I2C1, i2cSensors)
+	#pragma config(I2C_Usage, I2C1, i2cSensors)
 #pragma config(Sensor, in1,    powerExpanderBatterySensor, sensorAnalog)
 #pragma config(Sensor, dgtl11, launcherBackSensor, sensorTouch)
 #pragma config(Sensor, dgtl12, claw,           sensorDigitalOut)
@@ -309,6 +309,36 @@ void armLogic() {
 
 }
 
+void launcherLogic() {
+	// Seeing if the sensor value has changed
+	bool launcherSensorHasChanged = toggleButtonSetter(&launcherStruct.sensorTransition, SensorValue[launcherBackSensor]); // Update the ToggleButton struct, see if the sensor has changed. This needs to occur regeardless of if auto is on or not so that it can be set to false when auto is off.
+
+	if (launcherStruct.autoEnabled.isTrue && launcherSensorHasChanged && SensorValue[launcherBackSensor]) {
+		// Using SensorValue not ToggleButton.isTrue as only using the struct so this runs once per press
+		launcherStruct.numTimesTrue += 1; // If state has transitioned and the sensor is now pressed, then need to increment counter
+		if (launcherStruct.numTimesTrue >= launcherStruct.numTimesTrueNeeded) { // If goal reached
+			launcherStruct.autoEnabled.isTrue = false; // Disable auto; stop the motors
+			launcherStruct.primedToLaunch = true; // If auto is enabled, it should always end in the drawn position
+		}
+	}
+
+	// Seeing if the user has pressed the auto button
+	if (toggleButtonSetter(&launcherStruct.autoEnabled, vexRT[BTN_TOGGLE_LAUNCHER_AUTO])) { // Button has been pressed
+		if (launcherStruct.autoEnabled.isTrue) { // Below doesn't need to be in this if statement, but doing so for clarity
+			launcherStruct.numTimesTrue = 0; // Reset counter. Do it on enable rather than disable as multiple things can disable it but only be enabled here
+			launcherStruct.numTimesTrueNeeded = 1 + (launcherStruct.primedToLaunch && !SensorValue[launcherBackSensor]); // If primed but there has been slip, causing the sensor to not be depressed, then true needs to be hit twice rather than once
+		}
+	}
+
+	if (vexRT[BTN_DRAW_LAUNCHER_BACK] || vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) {
+		launcherStruct.autoEnabled.isTrue = launcherStruct.primedToLaunch = false; // disable auto, set to undrawn if there is any input.
+		motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) * LAUNCHER_SPEED; // Manual control
+	}
+	else if (launcherStruct.autoEnabled.isTrue) {
+		motor[launcher] = LAUNCHER_AUTO_SPEED;
+	}
+	else motor[launcher] = 0;
+}
 
 
 void auto() {
@@ -332,6 +362,10 @@ task usercontrol()
 	{
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
+		clearLCDLine(1);
+		sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
+		displayLCDString(1,0,line2);
+
 
 		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
 
@@ -351,54 +385,7 @@ task usercontrol()
 		if (toggleButtonSetter(&toggleClawState, vexRT[BTN_TOGGLE_PNEUMATICS])) SensorValue[claw] = !SensorValue[claw]; //Switch value of claw
 
 		// ### Launcher
-
-		// Seeing if the sensor value has changed
-		bool launcherSensorHasChanged = toggleButtonSetter(&launcherStruct.sensorTransition, SensorValue[launcherBackSensor]); // Update the ToggleButton struct, see if the sensor has changed. This needs to occur regeardless of if auto is on or not so that it can be set to false when auto is off.
-		clearLCDLine(1);
-		sprintf(line2, "%d/%d, %d %d %d", launcherStruct.numTimesTrue, launcherStruct.numTimesTrueNeeded,
-		launcherStruct.autoEnabled.isTrue, launcherSensorHasChanged, SensorValue[launcherBackSensor]);
-		// sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
-		displayLCDString(1,0,line2);
-
-		if (launcherStruct.autoEnabled.isTrue && launcherSensorHasChanged && SensorValue[launcherBackSensor]) {
-
-			launcherStruct.numTimesTrue += 1; // If state has transitioned and the sensor is now pressed, then need to increment counter
-			if (launcherStruct.numTimesTrue >= launcherStruct.numTimesTrueNeeded) { // If goal reached
-				launcherStruct.autoEnabled.isTrue = false; // Disable auto; stop the motors
-				launcherStruct.primedToLaunch = true; // If auto is enabled, it should always end in the drawn position
-			}
-		}
-
-		// Seeing if the user has pressed the
-		//vexRT[BTN_TOGGLE_LAUNCHER_AUTO]
-		if (toggleButtonSetter(&launcherStruct.autoEnabled, nLCDButtons == 2)) { // Button has been pressed
-			if (launcherStruct.autoEnabled.isTrue) { // Below doesn't need to be in this if statement, but doing so for clarity
-				launcherStruct.numTimesTrue = 0; // Reset counter. Do it on enable rather than disable as multiple things can disable it but only be enabled here
-				launcherStruct.numTimesTrueNeeded = 1 + (launcherStruct.primedToLaunch && !SensorValue[launcherBackSensor]); // If primed but there has been slip, causing the sensor to not be depressed, then true needs to be hit twice rather than once
-			}
-		}
-
-		if (nLCDButtons == 4) {
-			launcherStruct.autoEnabled.isTrue = launcherStruct.primedToLaunch = false;
-			motor[launcher] = LAUNCHER_SPEED;
-		}
-		//if (vexRT[BTN_DRAW_LAUNCHER_BACK] || vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) {
-		//	launcherStruct.autoEnabled.isTrue = launcherStruct.primedToLaunch = false; // disable auto, set to undrawn if there is any input.
-		//	motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) * LAUNCHER_SPEED; // Manual control
-		//}
-		else if (launcherStruct.autoEnabled.isTrue) {
-			// motor[launcher] = LAUNCHER_AUTO_SPEED;
-		}
-		else motor[launcher] = 0;
-		/*
-		toggleButtonSetter(&toggleLauncherAuto, );
-		if (vexRT[BTN_DRAW_LAUNCHER_BACK] || vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) {
-			toggleLauncherAuto.isTrue = false; // Override auto
-			motor[launcher] = (vexRT[BTN_DRAW_LAUNCHER_BACK] - vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) * LAUNCHER_SPEED; // Draw the launcher back
-		}
-		else if (toggleLauncherAuto.isTrue) motor[launcher] = !SensorValue[launcherBackSensor] * LAUNCHER_SPEED; // If sensor not activated, run the motor
-		else motor[launcher] = 0; */
-
+		launcherLogic();
 	}
 }
 
