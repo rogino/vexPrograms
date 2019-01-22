@@ -27,14 +27,29 @@ bool toggleButtonSetter(struct ToggleButton* toggleButton, bool buttonIsPressed)
 // Example usage
 
 /*
+// Using ToggleButton to switch between tank and arcade drive
 task main() {
 	struct ToggleButton driveModeIsTank; // Create the struct. Can be done outside of any function
 	initializeToggleButton(&driveModeIsTank, true); // Starts in tank drive. The '&' means a pointer to the struct is passed so that the function can modify it in-place. This must be done inside a function or task.
 
-	while(true) {
+	while (true) {
 		toggleButtonSetter(&driveModeIsTank, vexRT[Btn8D]); // Runs the setter so the value can be updated if needed. It will return a boolean, but we don't need any special behaviours when the mode changes - we just need to know what state it's in
 		if (driveModeIsTank.isTrue) drive(vexRT[Ch3], vexRT[Ch2]); // If true, drive in tank mode. 'driveModeIsTank.isTrue' is used instead of 'driveModeIsTank->isTrue' as in the functions, a pointer to the struct is being passed while in this, the struct is being accessed directly
 		else drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]);
 	}
+}
+
+// Using ToggleButton to toggle pneumatics state
+// This does not use the isTrue property, only needing to know when the state changes
+task main() {
+	struct ToggleButton pneumaticsToggler;
+	initializeToggleButton(&pneumaticsToggler);
+
+	while (true) {
+		if (toggleButtonSetter(&pneumaticsToggler, vexRT[Btn7D])) { // Function returns true when the value changes
+			SensorValue[pneumaticsSensor] = !SensorValue[pneumaticsSensor]; // Invert the value
+		}
+	}
+
 }
 */
