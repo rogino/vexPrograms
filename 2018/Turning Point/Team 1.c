@@ -101,8 +101,11 @@ struct ToggleButton toggleDriveTank;
 const float WHEEL_RADIUS_INCHES = 2;
 const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
 const short DRIVE_MOTORS_GEARING = HIGHSPEED; // Drive using speed motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
-int distanceToDriveTicks(float distance) {
-	return (int) (COUNTS_PER_MOTOR_ROTATION[DRIVE_MOTORS_GEARING] * distance / METERS_PER_WHEEL_ROTATION); // May be off by up to *gasp* 1 tick due to rounding down
+int distanceToDriveTicks(float distanceMeters) {
+	// return (int) (COUNTS_PER_MOTOR_ROTATION[DRIVE_MOTORS_GEARING] * distance / METERS_PER_WHEEL_ROTATION); // May be off by up to *gasp* 1 tick due to rounding down
+	// From testing with torque, 1m=1800 ticks
+	// Thus, 1m/1800ticks = distance/xticks, xticks = distance * 1800
+	return distanceMeters * 1800;
 }
 
 // ### Drive Pid
@@ -291,6 +294,7 @@ void armLogic() {
 
 }
 
+
 void launcherLogic() {
 	// Seeing if the sensor value has changed
 	bool launcherSensorHasChanged = toggleButtonSetter(&launcherStruct.sensorTransition, SensorValue[launcherBackSensor]); // Update the ToggleButton struct, see if the sensor has changed. This needs to occur regeardless of if auto is on or not so that it can be set to false when auto is off.
@@ -305,11 +309,9 @@ void launcherLogic() {
 	}
 
 	// Seeing if the user has pressed the auto button
-	if (toggleButtonSetter(&launcherStruct.autoEnabled, vexRT[BTN_TOGGLE_LAUNCHER_AUTO])) { // Button has been pressed
-		if (launcherStruct.autoEnabled.isTrue) { // Below doesn't need to be in this if statement, but doing so for clarity
-			launcherStruct.numTimesTrue = 0; // Reset counter. Do it on enable rather than disable as multiple things can disable it but only be enabled here
-			launcherStruct.numTimesTrueNeeded = 1 + (launcherStruct.primedToLaunch && !SensorValue[launcherBackSensor]); // If primed but there has been slip, causing the sensor to not be depressed, then true needs to be hit twice rather than once
-		}
+	if (toggleButtonSetter(&launcherStruct.autoEnabled, vexRT[BTN_TOGGLE_LAUNCHER_AUTO]) && launcherStruct.autoEnabled.isTrue) { // Button has been pressed and autonomous is now enabled
+		launcherStruct.numTimesTrue = 0; // Reset counter. Do it on enable rather than disable as multiple things can disable it but only be enabled here
+		launcherStruct.numTimesTrueNeeded = 1 + (launcherStruct.primedToLaunch && !SensorValue[launcherBackSensor]); // If primed but there has been slip, causing the sensor to not be depressed, then true needs to be hit twice rather than once
 	}
 
 	if (vexRT[BTN_DRAW_LAUNCHER_BACK] || vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) {
@@ -391,6 +393,7 @@ void untilDrivePIDFinishes() {
 		runDrivePid();
 		wait1Msec(MAIN_LOOP_DELAY);
 		driveLog();
+
 		string s;
 		sprintf(s, "%d %d", driveLPid.error, driveRPid.error);
 		clearLCDLine(1);
@@ -402,42 +405,66 @@ void untilDrivePIDFinishes() {
 void auto() {
 
 	//for (int i = 0; i < 100; i++) {driveLogEmpty(); wait1Msec(10);}
-	initializeDriveStraight(1); untilDrivePIDFinishes();
 
-	wait1Msec(3000);
-	initializeDriveStraight(-0.1); untilDrivePIDFinishes();
-
-	wait1Msec(3000);
-	initializeDriveStraight(-0.9); untilDrivePIDFinishes();
-	// initializeRotate(-7);
-	// untilDrivePIDFinishes();
+	initializeDriveStraight(1);
+	untilDrivePIDFinishes();
+	//wait1Msec(200);
+	//initializeDriveStraight(-1);
+	//untilDrivePIDFinishes();
+	//initializeRotate(7);
+	//untilDrivePIDFinishes();
+	//wait1Msec(1000);
+	//initializeRotate(83);
+	//untilDrivePIDFinishes();
+	//wait1Msec(300);
+	//initializeRotate(-90);
+	//untilDrivePIDFinishes();
 
 	// motor[launcher] = 100;
 	// wait1Msec(4000);
 	// motor[launcher] = 0;
+
+
+	// launcherStruct.autoEnabled = true;
+	// launcherStruct.numTimesTrueNeeded = 2; // Need 2 to launch the ball
+
+	// while(true) {
+	// 	wait1Msec(MAIN_LOOP_DELAY);
+	// 	launcherLogic();
+
+	// 	if (launcherStruct.numTimesTrue == 1 && !SensorValue[launcherBackSensor]) {
+	// 		// The sensor has been activated once but is currently false, meaning the ball has launched
+	// 		launcherStruct.primedToLaunch = launcherLogic.autoEnabled = false; // Reset for next time
+	// 		break; // Exit the loop
+	// 	}
+	// }
 }
 
 task autonomous()
 {
-	auto();
+	// auto();
 }
+
 
 
 
 task usercontrol()
 {
-	auto();
+
 	string line2;
 	//rotate(true, -90);
 	while (true)
 	{
 		//rotate(false, 0);
 		// ### Random
+		if (nLCDButtons == 2) auto();
+
+
 		wait1Msec(MAIN_LOOP_DELAY);
-		// clearLCDLine(1);
+		 clearLCDLine(1);
 		// sprintf(line2, "L: %d; R: %d", driveRPid.error, driveLPid.error);
-		// sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
-		// displayLCDString(1,0,line2);
+		 sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
+		 displayLCDString(1,0,line2);
 
 
 		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
