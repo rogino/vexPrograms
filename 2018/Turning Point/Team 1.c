@@ -1,4 +1,4 @@
-	#pragma config(I2C_Usage, I2C1, i2cSensors)
+#pragma config(I2C_Usage, I2C1, i2cSensors)
 #pragma config(Sensor, in1,    powerExpanderBatterySensor, sensorAnalog)
 #pragma config(Sensor, dgtl11, launcherBackSensor, sensorTouch)
 #pragma config(Sensor, dgtl12, claw,           sensorDigitalOut)
@@ -108,6 +108,10 @@ int distanceToDriveTicks(float distance) {
 // ### Drive Pid
 struct PidStruct driveLPid;
 struct PidStruct driveRPid;
+void setDrivePIDSettings(float P, float I, float D, int maxIntegral, short maxPower) {
+	initializePidStruct(&driveLPid, P, I, D, false, maxIntegral, maxPower);
+	memcpy(&driveRPid, &driveLPid, sizeof(PidStruct)); // Copy settings for left to right. Can do this as the struct has no pointers so values, not references are used
+}
 
 // ### Intake
 const short INTAKE_SPEED = 100;
@@ -204,10 +208,7 @@ void pre_auton()
 	initializeToggleButton(&launcherStruct.sensorTransition, false);
 	launcherStruct.numTimesTrue = launcherStruct.numTimesTrueNeeded = 0; // Initialization
 
-
 	initializePidStruct(&armPid, 0.75, 0.008, 1, true, 30000, 127);
-	initializePidStruct(&driveLPid, 0.32, 0, 4.1, false, 10000, 127);
-	memcpy(&driveRPid, &driveLPid, sizeof(PidStruct)); // Copy settings for left to right. Can do this as the struct has no pointers so values, not references are used
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -227,15 +228,14 @@ void drive(short l, short r) {
 // DistanceMeters ignored if reset is false
 void driveStraight(bool reset, float distanceMeters) {
 	if (reset) {
+		setDrivePIDSettings(0.2, 0.005, 4, 30000, 127);
+		int numTicks = distanceToDriveTicks(distanceMeters);
 		resetPid(&driveLPid);
 		resetPid(&driveRPid);
 		resetMotorEncoder(driveMBL);
 		resetMotorEncoder(driveMR);
-
-		int numTicks = distanceToDriveTicks(distanceMeters);
-
-		driveLPid.target = numTicks;
-		driveRPid.target = numTicks;
+		setPidTarget(&driveLPid, numTicks);
+		setPidTarget(&driveRPid, numTicks);
 	}
 
 	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
@@ -244,6 +244,24 @@ void driveStraight(bool reset, float distanceMeters) {
 	drive(l, r);
 }
 
+void rotate(bool reset, float angleDegrees) {
+	if (reset) {
+		resetPid(&driveLPid);
+		resetPid(&driveRPid);
+		resetMotorEncoder(driveMBL);
+		resetMotorEncoder(driveMR);
+		setDrivePIDSettings(1, 0.014, 0, 30000, 127);
+		int numTicks = angleDegrees/360.0 * 2110;
+
+		setPidTarget(&driveLPid, numTicks);
+		setPidTarget(&driveRPid, -numTicks);
+	}
+
+	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
+	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
+
+	drive(l, r);
+}
 
 void driveTank() { drive(vexRT[Ch3], vexRT[Ch2]); }
 void driveArcade() { drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]); }
@@ -264,7 +282,7 @@ void armLogic() {
 		else {
 			armPidState = ARM_PID_LOCKED; // If not locked, lock
 			resetPid(&armPid);
-			armPid.target = armImeValue;
+			setPidTarget(&armPid, armImeValue);
 		}
 	}
 
@@ -273,7 +291,7 @@ void armLogic() {
 			case ARM_PID_LOW_POST: // If currently low, next state is high
 				armPidState = ARM_PID_HIGH_POST;
 				resetPid(&armPid);
-				armPid.target = ARM_HIGH_POST_HEIGHT;
+				setPidTarget(&armPid, ARM_HIGH_POST_HEIGHT);
 				break;
 
 			case ARM_PID_HIGH_POST: // If currently high, disable
@@ -283,7 +301,7 @@ void armLogic() {
 			default:
 				armPidState = ARM_PID_LOW_POST;
 				resetPid(&armPid);
-				armPid.target = ARM_LOW_POST_HEIGHT;
+				setPidTarget(&armPid, ARM_LOW_POST_HEIGHT);
 				break;
 		}
 	}
@@ -340,12 +358,74 @@ void launcherLogic() {
 	else motor[launcher] = 0;
 }
 
+bool drivePidFinished() {
+	return driveLPid.pidFinished && driveRPid.pidFinished;
+}
+
+void driveLog() {
+		datalogDataGroupStart();
+		datalogAddValue(0, driveLPid.power);
+		datalogAddValue(1, driveLPid.error);
+		datalogAddValue(2, driveLPid.derivative);
+		datalogAddValue(3, driveLPid.integral);
+
+		datalogAddValue(4, driveRPid.power);
+		datalogAddValue(5, driveRPid.error);
+		datalogAddValue(6, driveRPid.derivative);
+		datalogAddValue(7, driveRPid.integral);
+
+		datalogDataGroupEnd();
+	}
+void driveLogEmpty() {
+		datalogDataGroupStart();
+		datalogAddValue(0, 0);
+		datalogAddValue(1, 0);
+		datalogAddValue(2, 0);
+		datalogAddValue(3, 0);
+		datalogAddValue(4, 0);
+		datalogAddValue(5, 0);
+		datalogAddValue(6, 0);
+		datalogAddValue(7, 0);
+		datalogAddValue(8, 0);
+		datalogDataGroupEnd();
+}
 
 void auto() {
-	motor[launcher] = LAUNCHER_SPEED;
-	wait1Msec(3500);
-	motor[launcher] = 0;
+	// Blue side near flags
+	// Right move 150
+	//driveStraight(true, 1);
+	//while(!drivePidFinished()) {
+	//	driveStraight(false, 0);
+	//	driveLog();
+	//}
 
+	//for (int i = 0; i < 100; i++) {driveLogEmpty(); wait1Msec(10);}
+
+	//driveStraight(true, -0.1);
+	//while(!drivePidFinished()) {
+	//	driveStraight(false, 0);
+	//	driveLog();
+	//}
+
+	driveStraight(true, 0.1);
+	while(!drivePidFinished()) {
+		driveStraight(false, 0);
+		driveLog();
+	}
+	//rotate(true, 90);
+	//while(!drivePidFinished()) {
+	//	rotate(false, 0);
+	//	driveLog();
+	//}
+	wait1Msec(1000);
+	rotate(true, -7);
+	while(!drivePidFinished()) {
+		rotate(false, 0);
+		driveLog();
+	}
+	motor[launcher] = 100;
+	wait1Msec(4000);
+	motor[launcher] = 0;
 }
 
 task autonomous()
@@ -357,12 +437,16 @@ task autonomous()
 
 task usercontrol()
 {
+	auto();
 	string line2;
+	//rotate(true, -90);
 	while (true)
 	{
+		//rotate(false, 0);
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
 		clearLCDLine(1);
+		// sprintf(line2, "L: %d; R: %d", driveRPid.error, driveLPid.error);
 		sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
 		displayLCDString(1,0,line2);
 

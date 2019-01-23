@@ -24,9 +24,14 @@ typedef struct {
 } PidStruct;
 
 void resetPid(struct PidStruct *pid) {
-	pid->error = pid->integral = pid->derivative = pid->power = pid->numLittleMovement = 0;
+	pid->integral = pid->derivative = pid->power = pid->numLittleMovement = 0;
 	pid->pidFinished = false;
 	pid->errorSignPositive = true;
+}
+
+void setPidTarget(struct PidStruct *pid, int target) {
+	pid->target = target;
+	pid->error = target; // So that the first PID loop has derivative of zero
 }
 
 void initializePidStruct(struct PidStruct* pid, float P, float I, float D, bool powerNeededToHoldPosition, int maxIntegral, short maxPower) {
@@ -36,8 +41,8 @@ void initializePidStruct(struct PidStruct* pid, float P, float I, float D, bool 
 	pid->powerNeededToHoldPosition = powerNeededToHoldPosition;
 	pid->maxIntegral = maxIntegral;
 	pid->maxPower = maxPower;
-	pid->littleMovementDefinition = 3;
-	pid->numLittleMovementForEnd = 50;
+	pid->littleMovementDefinition = 2;
+	pid->numLittleMovementForEnd = 100;
 
 	resetPid(pid); // need to initialize all variables
 }
@@ -55,9 +60,11 @@ short runPid(struct PidStruct *pid, int currentImeValue) {
 
 	pid->error = error; // Set the new error
 
-	if (!pid->powerNeededToHoldPosition && abs(pid->derivative) < pid->littleMovementDefinition) pid->numLittleMovement++; // If movement is below threshold, increment
+	if (!pid->powerNeededToHoldPosition && abs(pid->derivative) < pid->littleMovementDefinition) {
+		pid->numLittleMovement = (pid->numLittleMovement < pid->numLittleMovementForEnd)? pid->numLittleMovement + 1: pid->numLittleMovementForEnd; // If movement is below threshold, increment. But limit how big it can get
+	}
 	else pid->numLittleMovement = 0; // Reset if movement larger or if power is needed to hold the position so this should never occur
-	if (!pid->powerNeededToHoldPosition && pid->numLittleMovement > pid->numLittleMovementForEnd) pid->pidFinished = true; //Stop movement
+	if (!pid->powerNeededToHoldPosition && pid->numLittleMovement >= pid->numLittleMovementForEnd) pid->pidFinished = true; //Stop movement
 
 
 	short power = pid->error * pid->P + pid->integral * pid->I + pid->derivative * pid->D;
