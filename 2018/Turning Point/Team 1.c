@@ -225,43 +225,7 @@ void drive(short l, short r) {
 	motor[driveMR] = r;
 }
 
-// DistanceMeters ignored if reset is false
-void driveStraight(bool reset, float distanceMeters) {
-	if (reset) {
-		setDrivePIDSettings(0.2, 0.005, 4, 30000, 127);
-		int numTicks = distanceToDriveTicks(distanceMeters);
-		resetPid(&driveLPid);
-		resetPid(&driveRPid);
-		resetMotorEncoder(driveMBL);
-		resetMotorEncoder(driveMR);
-		setPidTarget(&driveLPid, numTicks);
-		setPidTarget(&driveRPid, numTicks);
-	}
 
-	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
-	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
-
-	drive(l, r);
-}
-
-void rotate(bool reset, float angleDegrees) {
-	if (reset) {
-		resetPid(&driveLPid);
-		resetPid(&driveRPid);
-		resetMotorEncoder(driveMBL);
-		resetMotorEncoder(driveMR);
-		setDrivePIDSettings(1, 0.014, 0, 30000, 127);
-		int numTicks = angleDegrees/360.0 * 2110;
-
-		setPidTarget(&driveLPid, numTicks);
-		setPidTarget(&driveRPid, -numTicks);
-	}
-
-	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
-	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
-
-	drive(l, r);
-}
 
 void driveTank() { drive(vexRT[Ch3], vexRT[Ch2]); }
 void driveArcade() { drive(vexRT[Ch3] + vexRT[Ch1], vexRT[Ch3] - vexRT[Ch1]); }
@@ -358,6 +322,38 @@ void launcherLogic() {
 	else motor[launcher] = 0;
 }
 
+
+
+
+void runDrivePid() {
+	short l = runPid(&driveLPid, nMotorEncoder(driveMBL));
+	short r = runPid(&driveRPid, nMotorEncoder(driveMR));
+
+	drive(l, r);
+}
+
+void initializeDrivePID(int ticksL, int ticksR) {
+	resetPid(&driveLPid);
+	resetPid(&driveRPid);
+	resetMotorEncoder(driveMBL);
+	resetMotorEncoder(driveMR);
+	setPidTarget(&driveLPid, ticksL);
+	setPidTarget(&driveRPid, ticksR);
+}
+void initializeDriveStraight(float distanceMeters) {
+	// setDrivePIDSettings(0.16, 0.006, 6, 30000, 127); Pretty Good
+	// setDrivePIDSettings(0.16, 0.01, 6, 30000, 127); Good for 1m but juttery
+	setDrivePIDSettings(0.15, 0.018, 6, 5000, 127);
+	int numTicks = distanceToDriveTicks(distanceMeters);
+	initializeDrivePID(numTicks, numTicks);
+}
+
+void initializeRotate(float angleDegrees) {
+	setDrivePIDSettings(1, 0.014, 0, 30000, 127);
+	int numTicks = angleDegrees/360.0 * 2110;
+	initializeDrivePID(numTicks, -numTicks);
+
+}
 bool drivePidFinished() {
 	return driveLPid.pidFinished && driveRPid.pidFinished;
 }
@@ -390,42 +386,35 @@ void driveLogEmpty() {
 		datalogDataGroupEnd();
 }
 
+void untilDrivePIDFinishes() {
+	while(!drivePidFinished()) {
+		runDrivePid();
+		wait1Msec(MAIN_LOOP_DELAY);
+		driveLog();
+		string s;
+		sprintf(s, "%d %d", driveLPid.error, driveRPid.error);
+		clearLCDLine(1);
+		displayLCDString(1, 0, s);
+	}
+}
+
+
 void auto() {
-	// Blue side near flags
-	// Right move 150
-	//driveStraight(true, 1);
-	//while(!drivePidFinished()) {
-	//	driveStraight(false, 0);
-	//	driveLog();
-	//}
 
 	//for (int i = 0; i < 100; i++) {driveLogEmpty(); wait1Msec(10);}
+	initializeDriveStraight(1); untilDrivePIDFinishes();
 
-	//driveStraight(true, -0.1);
-	//while(!drivePidFinished()) {
-	//	driveStraight(false, 0);
-	//	driveLog();
-	//}
+	wait1Msec(3000);
+	initializeDriveStraight(-0.1); untilDrivePIDFinishes();
 
-	driveStraight(true, 0.1);
-	while(!drivePidFinished()) {
-		driveStraight(false, 0);
-		driveLog();
-	}
-	//rotate(true, 90);
-	//while(!drivePidFinished()) {
-	//	rotate(false, 0);
-	//	driveLog();
-	//}
-	wait1Msec(1000);
-	rotate(true, -7);
-	while(!drivePidFinished()) {
-		rotate(false, 0);
-		driveLog();
-	}
-	motor[launcher] = 100;
-	wait1Msec(4000);
-	motor[launcher] = 0;
+	wait1Msec(3000);
+	initializeDriveStraight(-0.9); untilDrivePIDFinishes();
+	// initializeRotate(-7);
+	// untilDrivePIDFinishes();
+
+	// motor[launcher] = 100;
+	// wait1Msec(4000);
+	// motor[launcher] = 0;
 }
 
 task autonomous()
@@ -445,10 +434,10 @@ task usercontrol()
 		//rotate(false, 0);
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
-		clearLCDLine(1);
+		// clearLCDLine(1);
 		// sprintf(line2, "L: %d; R: %d", driveRPid.error, driveLPid.error);
-		sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
-		displayLCDString(1,0,line2);
+		// sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
+		// displayLCDString(1,0,line2);
 
 
 		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
