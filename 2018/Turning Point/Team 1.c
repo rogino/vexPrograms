@@ -89,22 +89,15 @@ bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_A
 
 
 // ### PID variables
-const float COUNTS_PER_MOTOR_ROTATION[] = {627.2, 392, 261.333 }; // Number of counts for one rotation of the motor
-enum gearingTypes { TORQUE, HIGHSPEED, TURBO }; // Enum corresponding to the array above. Float not integral so can't use enum with custom values
-
 // ### System
 const short MAIN_LOOP_DELAY = 10; // Note: PID calibrated with 10msec main loop
 
 // ### Drive
 struct ToggleButton toggleDriveTank;
 
-const float WHEEL_RADIUS_INCHES = 2;
-const float METERS_PER_WHEEL_ROTATION = 2 * PI * WHEEL_RADIUS_INCHES * 0.0254; //0.0254 to convert inches to meters
-const short DRIVE_MOTORS_GEARING = HIGHSPEED; // Drive using speed motors. Declared as short instead of `enum gearingTypes varName` as I want to use it as an index
 int distanceToDriveTicks(float distanceMeters) {
-	// return (int) (COUNTS_PER_MOTOR_ROTATION[DRIVE_MOTORS_GEARING] * distance / METERS_PER_WHEEL_ROTATION); // May be off by up to *gasp* 1 tick due to rounding down
 	// From testing with torque, 1m=1800 ticks
-	// Thus, 1m/1800ticks = distance/xticks, xticks = distance * 1800
+	// Thus, ticks = distance * 1800
 	return distanceMeters * 1800;
 }
 
@@ -351,7 +344,7 @@ void initializeDriveStraight(float distanceMeters) {
 }
 
 void initializeRotate(float angleDegrees) {
-	setDrivePIDSettings(1, 0.014, 0, 30000, 127);
+	setDrivePIDSettings(0.15, 0.02, 4, 5000, 127);
 	int numTicks = angleDegrees/360.0 * 2110;
 	initializeDrivePID(numTicks, -numTicks);
 
@@ -406,17 +399,12 @@ void auto() {
 
 	//for (int i = 0; i < 100; i++) {driveLogEmpty(); wait1Msec(10);}
 
-	initializeDriveStraight(1);
-	untilDrivePIDFinishes();
-	//wait1Msec(200);
-	//initializeDriveStraight(-1);
-	//untilDrivePIDFinishes();
 	//initializeRotate(7);
 	//untilDrivePIDFinishes();
 	//wait1Msec(1000);
 	//initializeRotate(83);
 	//untilDrivePIDFinishes();
-	//wait1Msec(300);
+	//wait1Msec(1000);
 	//initializeRotate(-90);
 	//untilDrivePIDFinishes();
 
@@ -428,16 +416,16 @@ void auto() {
 	// launcherStruct.autoEnabled = true;
 	// launcherStruct.numTimesTrueNeeded = 2; // Need 2 to launch the ball
 
-	// while(true) {
-	// 	wait1Msec(MAIN_LOOP_DELAY);
-	// 	launcherLogic();
+	 while(true) {
+	 	wait1Msec(MAIN_LOOP_DELAY);
+	 	launcherLogic();
 
-	// 	if (launcherStruct.numTimesTrue == 1 && !SensorValue[launcherBackSensor]) {
-	// 		// The sensor has been activated once but is currently false, meaning the ball has launched
-	// 		launcherStruct.primedToLaunch = launcherLogic.autoEnabled = false; // Reset for next time
-	// 		break; // Exit the loop
-	// 	}
-	// }
+	 	if (launcherStruct.numTimesTrue == 1 && !SensorValue[launcherBackSensor]) {
+	 		// The sensor has been activated once but is currently false, meaning the ball has launched
+	 		launcherStruct.primedToLaunch = launcherStruct.autoEnabled = false; // Reset for next time
+	 		break; // Exit the loop
+	 	}
+	}
 }
 
 task autonomous()
