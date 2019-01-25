@@ -111,15 +111,7 @@ void lcdPrintAutonomousMode() { // Can't have an array of strings, so doing this
 	}
 	displayLCDString(1,0,line2);
 }
-
-void autonomousWrapper() {
-	switch(toggleAutonomousMode.state) {
-		case 0: autoBlueNear(); break;
-		case 1: autoBlueFar() ;	break;
-		case 2: autoRedNear() ;	break;
-		case 3:	autoRedFar()  ;	break;
-	}
-}
+void autonomousWrapper();
 
 // ### Drive
 struct ToggleButton toggleDriveTank;
@@ -233,8 +225,7 @@ void pre_auton()
 	initializeToggleButton(&launcherStruct.sensorTransition, false);
 	launcherStruct.numTimesTrue = launcherStruct.numTimesTrueNeeded = 0; // Initialization
 
-	initializeNToggleButton(&toggleAutonomousMode, 4, 0);
-	lcdPrintAutonomousMode(); // Print the initial state
+	initializeNToggleButton(&toggleAutonomousMode, 0, 4);
 
 	initializePidStruct(&armPid, 0.75, 0.008, 1, true, 30000, 127);
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
@@ -320,7 +311,7 @@ void armLogic() {
 }
 
 bool launcherSensor() {
-	return SensorValue[launcherBackSensor];
+	return (bool)SensorValue[launcherBackSensor];
 }
 
 /*
@@ -497,16 +488,19 @@ void autoBlueNear() {
 	initializeDriveStraight(-dist);
 	untilDrivePIDFinishes();
 }
-void autoBlueFar() {
 
+void autoBlueFar()  {}
+void autoRedNear()  {}
+void autoRedFar()   {}
+
+void autonomousWrapper() {
+	switch(toggleAutonomousMode.state) {
+		case 0: autoBlueNear(); break;
+		case 1: autoBlueFar() ;	break;
+		case 2: autoRedNear() ;	break;
+		case 3:	autoRedFar()  ;	break;
+	}
 }
-void autoRedNear() {
-
-}
-void autoRedFar() {
-
-}
-
 
 task autonomous()
 {
@@ -519,21 +513,20 @@ task autonomous()
 task usercontrol()
 {
 	string line1;
-
+	lcdPrintAutonomousMode(); // Print the initial state. Didn't work when in pre_auton for some reason
 	while (true)
 	{
 		// ### Random
 		wait1Msec(MAIN_LOOP_DELAY);
 
-		clearLCDLine(1);
-
-		if (SensorValue[powerExpanderBatterySensor] < 300) sprintf(line1, "CHECK BATTERY"); // Secondary battery not plugged in or status port not plugged in, or cortex is off. (or a ridiculously low voltage)
+		clearLCDLine(0);
+		if (nImmediateBatteryLevel == 0 || SensorValue[powerExpanderBatterySensor] < 300) sprintf(line1, "CHECK BATTERY"); // Primary battery not plugged in/cortex off, or secondary battery or its status port not plugged in
 		else sprintf(line1,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // Prints values for all IMEs. No spaces to try fit everything in one line
 		displayLCDString(0,0,line1);
 
 		if (btnComboAutonomous() || nLCDButtons == 2) autonomousWrapper(); // For when there is no field control. Start auto with 7L and 8R (or with LCD middle button)
 
-		if (NToggleButtonSetter(&toggleAutonomousMode, nLCDButtons == 4)) lcdPrintAutonomousMode(); // When button clicked, update display to reflect 
+		if (NToggleButtonSetter(&toggleAutonomousMode, nLCDButtons == 4)) lcdPrintAutonomousMode(); // When button clicked, update display to reflect
 
 
 		// ### Drive
@@ -555,4 +548,3 @@ task usercontrol()
 		launcherLogic();
 	}
 }
-
