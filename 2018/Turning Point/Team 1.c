@@ -28,7 +28,7 @@
 #include "ToggleButton.c"
 #include "PidStruct.c"
 // #include "Helper.c"
-// #include "NToggleButton.c"
+#include "NToggleButton.c"
 
 // TODO: limit to legal height under some conditions
 // TODO: Buttons to get to max height/high post and mid post
@@ -61,6 +61,11 @@ For motor naming, look at the robot from above with the cap flipper pointing upw
 ### Drive
 During tank drive: left, right joysticks' vertical axis used (Ch3, Ch2)
 During arcade drive: left joystick's vertical and right joystick's horizontal (Ch3, Ch1)
+
+### LCD Display
+Left: Reset arm IME zero position
+Center: Start autonomous
+Right: Change autonomous position
 */
 
 
@@ -91,6 +96,30 @@ bool btnComboRaiseArmSlowly() { return vexRT[BTN_LOWER_ARM] && vexRT[BTN_RAISE_A
 // ### PID variables
 // ### System
 const short MAIN_LOOP_DELAY = 10; // Note: PID calibrated with 10msec main loop
+
+// #### Autonomous
+struct NToggleButton toggleAutonomousMode;
+
+void lcdPrintAutonomousMode() { // Can't have an array of strings, so doing this instead
+	clearLCDLine(1);
+	string line2;
+	switch(toggleAutonomousMode.state) {
+		case 0: line2 = "Blue Near"; break;
+		case 1: line2 = "Blue Far" ; break;
+		case 2: line2 = "Red Near" ; break;
+		case 3: line2 = "Red Far"  ; break;
+	}
+	displayLCDString(1,0,line2);
+}
+
+void autonomousWrapper() {
+	switch(toggleAutonomousMode.state) {
+		case 0: autoBlueNear(); break;
+		case 1: autoBlueFar() ;	break;
+		case 2: autoRedNear() ;	break;
+		case 3:	autoRedFar()  ;	break;
+	}
+}
 
 // ### Drive
 struct ToggleButton toggleDriveTank;
@@ -159,7 +188,7 @@ task BatteryVoltageLCD() {
 
 		short powerExpanderRaw = SensorValue[powerExpanderBatterySensor];
 		if (powerExpanderRaw < 300) {
-			sprintf(line, "2ND BATTERY");
+			sprintf(line, "CHECK BATTERY");
 		} else {
 			primary = nImmediateBatteryLevel / 1000.0;
 			secondary = powerExpanderRaw / 180.0; // Vex forums say 270.0, but differs between cortex and power expander. 1.4-1.6 seems to be around the difference multiplier
@@ -192,17 +221,20 @@ void pre_auton()
 
 	bLCDBacklight = true; // Turn on backlight
 
-	startTask(BatteryVoltageLCD);
+	// startTask(BatteryVoltageLCD);
 
 	// Initialization of structs (needs to occur within a function)
 	initializeToggleButton(&toggleDriveTank, true); // default tank drive
-	initializeToggleButton(&toggleArmPidLock, false); // Default values for Lock and Post Toggler doesn't actually matter-just want to know when the state changes
 	initializeToggleButton(&toggleArmPidPost, false);
+	initializeToggleButton(&toggleArmPidLock, false); // Default values for Lock and Post Toggler doesn't actually matter-just want to know when the state changes
 	initializeToggleButton(&toggleClawState, false); // Same for claw
 
 	initializeToggleButton(&launcherStruct.autoEnabled, false);
 	initializeToggleButton(&launcherStruct.sensorTransition, false);
 	launcherStruct.numTimesTrue = launcherStruct.numTimesTrueNeeded = 0; // Initialization
+
+	initializeNToggleButton(&toggleAutonomousMode, 4, 0);
+	lcdPrintAutonomousMode(); // Print the initial state
 
 	initializePidStruct(&armPid, 0.75, 0.008, 1, true, 30000, 127);
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
@@ -287,12 +319,23 @@ void armLogic() {
 
 }
 
+bool launcherSensor() {
+	return SensorValue[launcherBackSensor];
+}
 
+/*
+Launcher
+Two main states: primed and unprimed.
+If unprimed, the launcher is drawn back until the sensor is activated. If the sensor fails to activate, the user can tap the button again to disable the autonomous draw back
+If primed, there are two substates
+If the launcher slips between the time the launcher is drawn back and fired, causing the sensor to return false, the launcher will be drawn 'back' until the sensor is activated twice, once to fire and the second time to draw it back
+If not, the launcher will be drawn back until the sensor is re-activated.
+*/
 void launcherLogic() {
 	// Seeing if the sensor value has changed
-	bool launcherSensorHasChanged = toggleButtonSetter(&launcherStruct.sensorTransition, SensorValue[launcherBackSensor]); // Update the ToggleButton struct, see if the sensor has changed. This needs to occur regeardless of if auto is on or not so that it can be set to false when auto is off.
+	bool launcherSensorHasChanged = toggleButtonSetter(&launcherStruct.sensorTransition, launcherSensor()); // Update the ToggleButton struct, see if the sensor has changed. This needs to occur regeardless of if auto is on or not so that it can be set to false when auto is off.
 
-	if (launcherStruct.autoEnabled.isTrue && launcherSensorHasChanged && SensorValue[launcherBackSensor]) {
+	if (launcherStruct.autoEnabled.isTrue && launcherSensorHasChanged && launcherSensor()) {
 		// Using SensorValue not ToggleButton.isTrue as only using the struct so this runs once per press
 		launcherStruct.numTimesTrue += 1; // If state has transitioned and the sensor is now pressed, then need to increment counter
 		if (launcherStruct.numTimesTrue >= launcherStruct.numTimesTrueNeeded) { // If goal reached
@@ -304,7 +347,7 @@ void launcherLogic() {
 	// Seeing if the user has pressed the auto button
 	if (toggleButtonSetter(&launcherStruct.autoEnabled, vexRT[BTN_TOGGLE_LAUNCHER_AUTO]) && launcherStruct.autoEnabled.isTrue) { // Button has been pressed and autonomous is now enabled
 		launcherStruct.numTimesTrue = 0; // Reset counter. Do it on enable rather than disable as multiple things can disable it but only be enabled here
-		launcherStruct.numTimesTrueNeeded = 1 + (launcherStruct.primedToLaunch && !SensorValue[launcherBackSensor]); // If primed but there has been slip, causing the sensor to not be depressed, then true needs to be hit twice rather than once
+		launcherStruct.numTimesTrueNeeded = 1 + (launcherStruct.primedToLaunch && !launcherSensor()); // If primed but there has been slip, causing the sensor to not be depressed, then true needs to be hit twice rather than once
 	}
 
 	if (vexRT[BTN_DRAW_LAUNCHER_BACK] || vexRT[BTN_DRAW_LAUNCHER_FORWARDS]) {
@@ -344,42 +387,29 @@ void initializeDriveStraight(float distanceMeters) {
 }
 
 void initializeRotate(float angleDegrees) {
-	setDrivePIDSettings(0.15, 0.02, 4, 5000, 127);
-	int numTicks = angleDegrees/360.0 * 2110;
+	setDrivePIDSettings(0.15, 0.02, 5, 5000, 127);
+	int numTicks = angleDegrees/360.0 * 2110; // Measured that one rotation is around this many ticks
 	initializeDrivePID(numTicks, -numTicks);
 
 }
-bool drivePidFinished() {
-	return driveLPid.pidFinished && driveRPid.pidFinished;
-}
+
+bool drivePidFinished() { return driveLPid.pidFinished && driveRPid.pidFinished; }
 
 void driveLog() {
-		datalogDataGroupStart();
-		datalogAddValue(0, driveLPid.power);
-		datalogAddValue(1, driveLPid.error);
-		datalogAddValue(2, driveLPid.derivative);
-		datalogAddValue(3, driveLPid.integral);
+	datalogDataGroupStart();
+	datalogAddValue(0, driveLPid.power);
+	datalogAddValue(1, driveLPid.error);
+	datalogAddValue(2, driveLPid.derivative);
+	datalogAddValue(3, driveLPid.integral);
 
-		datalogAddValue(4, driveRPid.power);
-		datalogAddValue(5, driveRPid.error);
-		datalogAddValue(6, driveRPid.derivative);
-		datalogAddValue(7, driveRPid.integral);
+	datalogAddValue(4, driveRPid.power);
+	datalogAddValue(5, driveRPid.error);
+	datalogAddValue(6, driveRPid.derivative);
+	datalogAddValue(7, driveRPid.integral);
 
-		datalogDataGroupEnd();
-	}
-void driveLogEmpty() {
-		datalogDataGroupStart();
-		datalogAddValue(0, 0);
-		datalogAddValue(1, 0);
-		datalogAddValue(2, 0);
-		datalogAddValue(3, 0);
-		datalogAddValue(4, 0);
-		datalogAddValue(5, 0);
-		datalogAddValue(6, 0);
-		datalogAddValue(7, 0);
-		datalogAddValue(8, 0);
-		datalogDataGroupEnd();
+	datalogDataGroupEnd();
 }
+
 
 void untilDrivePIDFinishes() {
 	while(!drivePidFinished()) {
@@ -395,42 +425,92 @@ void untilDrivePIDFinishes() {
 }
 
 
-void auto() {
-
-	//for (int i = 0; i < 100; i++) {driveLogEmpty(); wait1Msec(10);}
-
-	//initializeRotate(7);
-	//untilDrivePIDFinishes();
-	//wait1Msec(1000);
-	//initializeRotate(83);
-	//untilDrivePIDFinishes();
-	//wait1Msec(1000);
-	//initializeRotate(-90);
-	//untilDrivePIDFinishes();
-
-	// motor[launcher] = 100;
-	// wait1Msec(4000);
-	// motor[launcher] = 0;
-
-
-	// launcherStruct.autoEnabled = true;
-	// launcherStruct.numTimesTrueNeeded = 2; // Need 2 to launch the ball
-
-	 while(true) {
-	 	wait1Msec(MAIN_LOOP_DELAY);
-	 	launcherLogic();
-
-	 	if (launcherStruct.numTimesTrue == 1 && !SensorValue[launcherBackSensor]) {
-	 		// The sensor has been activated once but is currently false, meaning the ball has launched
-	 		launcherStruct.primedToLaunch = launcherStruct.autoEnabled = false; // Reset for next time
-	 		break; // Exit the loop
-	 	}
+void rotationTest() {
+	wait1Msec(2000);
+	int numTimes = 9;
+	for (int i = 0; i < numTimes; i++) {
+		initializeRotate(90/numTimes);
+		untilDrivePIDFinishes();
+		wait1Msec(50);
 	}
+	initializeRotate(-90);
+	untilDrivePIDFinishes();
+	wait1Msec(50);
 }
+
+
+void launchBall() {
+	// Occurs in series
+	if (launcherSensor()) {
+		// Already primed
+		while(launcherSensor()) {
+			wait1Msec(MAIN_LOOP_DELAY);
+			motor[launcher] = LAUNCHER_AUTO_SPEED;
+		}
+	} else {
+		// Uses the launcherStruct infrastructure even though it was designed for user input
+		bool prevState = launcherSensor();
+		ubyte numTransitions = 0;
+		while(numTransitions < 2) { // Once it goes from false->true->false, end it
+		 	wait1Msec(MAIN_LOOP_DELAY);
+		 	if (prevState != launcherSensor()) {
+		 		prevState = !prevState; // Get new state
+		 		numTransitions++;
+		 	}
+		 	motor[launcher] = LAUNCHER_AUTO_SPEED;
+		}
+	}
+	motor[launcher] = 0; // End
+}
+
+bool primeLauncher() {
+	// Call this in a while loop to make it run with parallel with other tasks. Returns true if launcher is primed
+	if (launcherSensor()) {
+		motor[launcher] = 0;
+		return true; // Finished
+	}
+	motor[launcher] = LAUNCHER_AUTO_SPEED;
+	return false; // Not yet finished
+
+}
+
+
+void autoBlueNear() {
+	// High flag: ~1.45m. Low flag: ~0.6m
+	float dist = 0.25;
+	float angle = 10;
+	int wait = 200;
+	wait1Msec(4000);
+	initializeDriveStraight(dist);
+	untilDrivePIDFinishes();
+	wait1Msec(wait);
+
+	initializeRotate(-angle);
+	untilDrivePIDFinishes();
+	wait1Msec(wait);
+
+	launchBall();
+	wait1Msec(wait);
+	initializeRotate(angle);
+	untilDrivePIDFinishes();
+	wait1Msec(wait);
+	initializeDriveStraight(-dist);
+	untilDrivePIDFinishes();
+}
+void autoBlueFar() {
+
+}
+void autoRedNear() {
+
+}
+void autoRedFar() {
+
+}
+
 
 task autonomous()
 {
-	// auto();
+	autonomousWrapper();
 }
 
 
@@ -438,24 +518,23 @@ task autonomous()
 
 task usercontrol()
 {
+	string line1;
 
-	string line2;
-	//rotate(true, -90);
 	while (true)
 	{
-		//rotate(false, 0);
 		// ### Random
-		if (nLCDButtons == 2) auto();
-
-
 		wait1Msec(MAIN_LOOP_DELAY);
-		 clearLCDLine(1);
-		// sprintf(line2, "L: %d; R: %d", driveRPid.error, driveLPid.error);
-		 sprintf(line2,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // No spaces to try fit everything in one line
-		 displayLCDString(1,0,line2);
 
+		clearLCDLine(1);
 
-		if (btnComboAutonomous()) auto(); // For when there is no field control. Start auto with 7L and 8R
+		if (SensorValue[powerExpanderBatterySensor] < 300) sprintf(line1, "CHECK BATTERY"); // Secondary battery not plugged in or status port not plugged in, or cortex is off. (or a ridiculously low voltage)
+		else sprintf(line1,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // Prints values for all IMEs. No spaces to try fit everything in one line
+		displayLCDString(0,0,line1);
+
+		if (btnComboAutonomous() || nLCDButtons == 2) autonomousWrapper(); // For when there is no field control. Start auto with 7L and 8R (or with LCD middle button)
+
+		if (NToggleButtonSetter(&toggleAutonomousMode, nLCDButtons == 4)) lcdPrintAutonomousMode(); // When button clicked, update display to reflect 
+
 
 		// ### Drive
 		toggleButtonSetter(&toggleDriveTank, vexRT[BTN_TOGGLE_DRIVE_MODE]);
@@ -477,11 +556,3 @@ task usercontrol()
 	}
 }
 
-/*
-Launcher
-Two main states: primed and unprimed.
-If unprimed, the launcher is drawn back until the sensor is activated. If the sensor fails to activate, the user can tap the button again to disable the autonomous draw back
-If primed, there are two substates
-If the launcher slips between the time the launcher is drawn back and fired, causing the sensor to return false, the launcher will be drawn 'back' until the sensor is activated twice, once to fire and the second time to draw it back
-If not, the launcher will be drawn back until the sensor is re-activated.
-*/
