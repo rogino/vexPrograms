@@ -42,7 +42,7 @@ void initializePidStruct(struct PidStruct* pid, float P, float I, float D, bool 
 	pid->maxIntegral = maxIntegral;
 	pid->maxPower = maxPower;
 	pid->littleMovementDefinition = 2;
-	pid->numLittleMovementForEnd = 100;
+	pid->numLittleMovementForEnd = 50;
 
 	resetPid(pid); // need to initialize all variables
 }
@@ -60,11 +60,11 @@ short runPid(struct PidStruct *pid, int currentImeValue) {
 
 	pid->error = error; // Set the new error
 
-	if (!pid->powerNeededToHoldPosition && abs(pid->derivative) < pid->littleMovementDefinition) {
+	if (abs(pid->derivative) < pid->littleMovementDefinition) {
 		pid->numLittleMovement = (pid->numLittleMovement < pid->numLittleMovementForEnd)? pid->numLittleMovement + 1: pid->numLittleMovementForEnd; // If movement is below threshold, increment. But limit how big it can get
 	}
 	else pid->numLittleMovement = 0; // Reset if movement larger or if power is needed to hold the position so this should never occur
-	if (!pid->powerNeededToHoldPosition && pid->numLittleMovement >= pid->numLittleMovementForEnd) pid->pidFinished = true; //Stop movement
+	if (pid->numLittleMovement >= pid->numLittleMovementForEnd) pid->pidFinished = true; //Stop movement. BUT ONLY if pid->powerNeededToHoldPosition is false. Useful to know when goal is reached when true, but shouldn't stop it
 
 
 	short power = pid->error * pid->P + pid->integral * pid->I + pid->derivative * pid->D;
@@ -75,6 +75,6 @@ short runPid(struct PidStruct *pid, int currentImeValue) {
 
 	pid->power = power;
 
-	if (pid->pidFinished) return 0; // No power to the motors since it's finished
+	if (!pid->powerNeededToHoldPosition && pid->pidFinished) return 0; // No power to the motors since it's finished
 	else return power;
 }

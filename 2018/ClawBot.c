@@ -73,7 +73,7 @@ void auto() {
 	wait1Msec(900);
 	motor[arm] = 0;
 
-		motor[claw] = -50;
+	motor[claw] = -50;
 	wait1Msec(1000);
 
 	drive(50, 70);
