@@ -168,6 +168,7 @@ enum armPidStateEnum armPidState = ARM_PID_DISABLED; // initial state
 
 struct ToggleButton toggleArmPidLock;
 struct ToggleButton toggleArmPidPost;
+struct ToggleButton toggleArmButtonsPressed;
 
 struct PidStruct armPid;
 
@@ -222,9 +223,11 @@ void pre_auton()
 	initializeToggleButton(&toggleDriveSensitivity, false); // default low sensntivity
 	initializeToggleButton(&toggleDriveReversed, false);
 
+	initializeToggleButton(&toggleArmButtonsPressed, false);
 	initializeToggleButton(&toggleArmPidPost, false);
 	initializeToggleButton(&toggleArmPidLock, false); // Default values for Lock and Post Toggler doesn't actually matter-just want to know when the state changes
 	initializeToggleButton(&toggleClawState, false); // Same for claw
+
 
 	initializeToggleButton(&launcherStruct.autoEnabled, false);
 	initializeToggleButton(&launcherStruct.sensorTransition, false);
@@ -288,9 +291,11 @@ void armLogic() {
 				break;
 		}
 	}
+	/*
+	if PID button pushed while raise/lower buttons pushed, PID is turned on
+	*/
+	if (toggleButtonSetter(&toggleArmButtonsPressed, vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) && toggleArmButtonsPressed.isTrue) armPidState = ARM_PID_DISABLED; // When manual button is pushed down, disable armPID. However, if the armPID button is pushed while one of the manual buttons are pushed, PID will be enabled and as the state is not changed, PID will remain unabled until the user releases the manual button(s) and presses on of them again, or pressed the PID button again.
 
-
-	if (vexRT[BTN_RAISE_ARM] || vexRT[BTN_LOWER_ARM]) armPidState = ARM_PID_DISABLED; // If either of the arm buttons are pressed, disable Pid
 
 	short power;
 	if (armPidState != ARM_PID_DISABLED) { // If enabled, call the PID function
