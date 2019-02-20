@@ -160,7 +160,7 @@ const short ARM_SLOW_SPEED = 50;
 // 0 = very bottom
 const short ARM_MAX_HEIGHT = 1300; // Max ~1370, but momentum so make it a bit lower
 const short ARM_HIGH_POST_HEIGHT = 1210;
-const short ARM_LOW_POST_HEIGHT = 815;
+const short ARM_LOW_POST_HEIGHT = 800;
 
 // #### Arm PID
 enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
@@ -232,7 +232,7 @@ void pre_auton()
 
 	initializeNToggleButton(&toggleAutonomousMode, 1, 4);
 
-	initializePidStruct(&armPid, 0.75, 0.008, 1, true, 30000, 127);
+	initializePidStruct(&armPid, 0.72, 0.008, 1, true, 30000, 127);
 	// Set bDisplayCompetitionStatusOnLcd to false if you don't want the LCD
 	// used by the competition include file, for example, you might want
 	// to display your team name on the LCD in this function.
@@ -480,6 +480,8 @@ void autoRedNear() {
 	launchBall();
 
 	//initializeRotate(-5);
+	motor[intake] = INTAKE_SPEED;
+
 	initializeDriveStraight(-1.75);
 	untilDrivePIDFinishes(false);
 
@@ -489,58 +491,34 @@ void autoRedNear() {
 
 	initializeRotate(-86); // Over-rotates
 	untilDrivePIDFinishes(false);
+	motor[intake] = 0;
 
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 
 	initializeDriveStraight(0.27);
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = false;
-
-}
-
-void autoBlueFar()  {
 	SensorValue[claw] = true;
 
-	initializeDriveStraight(0.80);
-	untilDrivePIDFinishes(false);
-
-	initializeRotate(-270); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
-	untilDrivePIDFinishes(false);
-
-	SensorValue[claw] = false;
-	resetPid(&armPid);
-	setPidTarget(&armPid, 400);
-	while (!armPid.pidFinished) {
-		wait1Msec(MAIN_LOOP_DELAY);
-		arm(runPid(&armPid, nMotorEncoder[armL]));
-	}
-	for (int i = 0; i < 2300/MAIN_LOOP_DELAY; i++) {
-		drive(127, 127, false); // Max power
-		arm(runPid(&armPid, nMotorEncoder[armL])); // Keep the arm up
-		wait1Msec(MAIN_LOOP_DELAY);
-	}
-	initializeDriveStraight(0); // Stop (trying to remove momentum)
-	untilDrivePIDFinishes(false);
-
-
 }
+
+
 void autoBlueNear() {
 	// Scores high flag then low flag
 	// Centered
-	initializeDriveStraight(0.35);
+	initializeDriveStraight(0.2);
 	untilDrivePIDFinishes(true);
 
-	initializeRotate(-10);
+	initializeRotate(-15);
 	untilDrivePIDFinishes(true);
 
 	launchBall();
 	motor[intake] = INTAKE_SPEED;
 
-	initializeRotate(9);
+	initializeRotate(17);
 	untilDrivePIDFinishes(false);
 
-	initializeDriveStraight(-1.78);
+	initializeDriveStraight(-1.5);
 	untilDrivePIDFinishes(false);
 
 	initializeDriveStraight(0.65);
@@ -551,20 +529,45 @@ void autoBlueNear() {
 	initializeRotate(90);
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 
 	initializeDriveStraight(0.27);
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = false;
+	SensorValue[claw] = true;
 	//initializeDriveStraight(1.4);
 	//untilDrivePIDFinishes(false);
 }
 
 
+void autoBlueFar()  {
+	SensorValue[claw] = false;
+
+	initializeDriveStraight(0.80);
+	untilDrivePIDFinishes(false);
+
+	initializeRotate(-270); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
+	untilDrivePIDFinishes(false);
+
+	SensorValue[claw] = true;
+	resetPid(&armPid);
+	setPidTarget(&armPid, 400);
+	while (!armPid.pidFinished) {
+		wait1Msec(MAIN_LOOP_DELAY);
+		arm(runPid(&armPid, nMotorEncoder[armL]));
+	}
+	for (int i = 0; i < 2500/MAIN_LOOP_DELAY; i++) {
+		drive(127, 127, false); // Max power
+		arm(runPid(&armPid, nMotorEncoder[armL])); // Keep the arm up
+		wait1Msec(MAIN_LOOP_DELAY);
+	}
+	initializeDriveStraight(0); // Stop (trying to remove momentum)
+	untilDrivePIDFinishes(false);
+}
+
 void autoRedFar()  {
 	// Climbs up to the alliance platform after rotating to scroe a cap (the one with the ball underneath)
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 
 	initializeDriveStraight(0.85);
 	untilDrivePIDFinishes(false);
@@ -572,14 +575,14 @@ void autoRedFar()  {
 	initializeRotate(280); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = false;
+	SensorValue[claw] = true;
 	resetPid(&armPid);
 	setPidTarget(&armPid, 400);
 	while (!armPid.pidFinished) {
 		wait1Msec(MAIN_LOOP_DELAY);
 		arm(runPid(&armPid, nMotorEncoder[armL]));
 	}
-	for (int i = 0; i < 2200/MAIN_LOOP_DELAY; i++) {
+	for (int i = 0; i < 2500/MAIN_LOOP_DELAY; i++) {
 		drive(127, 127, false); // Max power
 		arm(runPid(&armPid, nMotorEncoder[armL])); // Keep the arm up
 		wait1Msec(MAIN_LOOP_DELAY);
@@ -624,7 +627,10 @@ task usercontrol()
 		else sprintf(line1,"A%dL%dR%d", nMotorEncoder(armL), nMotorEncoder(driveMBL), nMotorEncoder(driveMR)); // Prints values for all IMEs. No spaces to try fit everything in one line
 		displayLCDString(0,0,line1);
 
-		if (nLCDButtons == 2) autonomousWrapper(); // For when there is no field control. Start auto with ~~7L and 8R~~ (or with LCD middle button)
+		if (nLCDButtons == 2) {
+			wait1Msec(1000);
+			autonomousWrapper(); // For when there is no field control. Start auto with ~~7L and 8R~~ (or with LCD middle button)
+		}
 
 		if (NToggleButtonSetter(&toggleAutonomousMode, nLCDButtons == 4)) {
 			lcdPrintAutonomousMode(); // When button clicked, update display to reflect
