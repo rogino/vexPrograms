@@ -156,11 +156,13 @@ struct LauncherStruct launcherStruct;
 const short ARM_SPEED = 127;
 const short ARM_SLOW_SPEED = 50;
 
+
 // #### Arm IME
 // 0 = very bottom
 const short ARM_MAX_HEIGHT = 1300; // Max ~1370, but momentum so make it a bit lower
 const short ARM_HIGH_POST_HEIGHT = 1210;
 const short ARM_LOW_POST_HEIGHT = 800;
+
 
 // #### Arm PID
 enum armPidStateEnum { ARM_PID_DISABLED, ARM_PID_LOCKED, ARM_PID_LOW_POST, ARM_PID_HIGH_POST };
@@ -479,31 +481,31 @@ void autoRedNear() {
 	untilDrivePIDFinishes(true);
 
 	wait1Msec(200);
-	initializeRotate(2); // At the end, it rotates slightly for some reason.
+	initializeRotate(-3); // At the end, it rotates slightly for some reason.
 	//untilDrivePIDFinishes(true);
 
 	launchBall();
 
-	//initializeRotate(-5);
+	initializeRotate(-4);
 	motor[intake] = INTAKE_SPEED;
 
-	initializeDriveStraight(-1.75);
+	initializeDriveStraight(-1.65);
 	untilDrivePIDFinishes(false);
 
 	wait1Msec(200);
-	initializeDriveStraight(0.65);
+	initializeDriveStraight(0.7);
 	untilDrivePIDFinishes(false);
 
-	initializeRotate(-86); // Over-rotates
+	initializeRotate(-84); // Over-rotates
 	untilDrivePIDFinishes(false);
 	motor[intake] = 0;
 
-	SensorValue[claw] = false;
+	SensorValue[claw] = true;
 
-	initializeDriveStraight(0.27);
+	initializeDriveStraight(0.28);
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 
 }
 
@@ -514,13 +516,13 @@ void autoBlueNear() {
 	initializeDriveStraight(0.2);
 	untilDrivePIDFinishes(true);
 
-	initializeRotate(-15);
+	initializeRotate(-13);
 	untilDrivePIDFinishes(true);
 
 	launchBall();
 	motor[intake] = INTAKE_SPEED;
 
-	initializeRotate(17);
+	initializeRotate(14);
 	untilDrivePIDFinishes(false);
 
 	initializeDriveStraight(-1.5);
@@ -531,22 +533,22 @@ void autoBlueNear() {
 
 	motor[intake] = 0;
 
-	initializeRotate(90);
+	initializeRotate(100);
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = false;
+	SensorValue[claw] = true;
 
 	initializeDriveStraight(0.27);
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 	//initializeDriveStraight(1.4);
 	//untilDrivePIDFinishes(false);
 }
 
 
 void autoBlueFar()  {
-	SensorValue[claw] = false;
+	SensorValue[claw] = true;
 
 	initializeDriveStraight(0.80);
 	untilDrivePIDFinishes(false);
@@ -554,7 +556,7 @@ void autoBlueFar()  {
 	initializeRotate(-270); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 	resetPid(&armPid);
 	setPidTarget(&armPid, 400);
 	while (!armPid.pidFinished) {
@@ -572,7 +574,7 @@ void autoBlueFar()  {
 
 void autoRedFar()  {
 	// Climbs up to the alliance platform after rotating to scroe a cap (the one with the ball underneath)
-	SensorValue[claw] = false;
+	SensorValue[claw] = true;
 
 	initializeDriveStraight(0.85);
 	untilDrivePIDFinishes(false);
@@ -580,7 +582,7 @@ void autoRedFar()  {
 	initializeRotate(280); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
 	untilDrivePIDFinishes(false);
 
-	SensorValue[claw] = true;
+	SensorValue[claw] = false;
 	resetPid(&armPid);
 	setPidTarget(&armPid, 400);
 	while (!armPid.pidFinished) {
