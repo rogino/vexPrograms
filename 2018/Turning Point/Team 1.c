@@ -516,7 +516,7 @@ void autoBlueNear() {
 	initializeDriveStraight(0.2);
 	untilDrivePIDFinishes(true);
 
-	initializeRotate(-13);
+	initializeRotate(-13.5);
 	untilDrivePIDFinishes(true);
 
 	launchBall();
@@ -525,7 +525,7 @@ void autoBlueNear() {
 	initializeRotate(14);
 	untilDrivePIDFinishes(false);
 
-	initializeDriveStraight(-1.5);
+	initializeDriveStraight(-1.4);
 	untilDrivePIDFinishes(false);
 
 	initializeDriveStraight(0.65);
@@ -579,7 +579,7 @@ void autoRedFar()  {
 	initializeDriveStraight(0.85);
 	untilDrivePIDFinishes(false);
 
-	initializeRotate(280); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
+	initializeRotate(300); // Rotate the other way to score the cap (remove ball from underneath it) while not getting in the way of climbing~~While driving forwards, it rotates a bit for some reason. Lower than 90 to compensate~~
 	untilDrivePIDFinishes(false);
 
 	SensorValue[claw] = false;
